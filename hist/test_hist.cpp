@@ -21,6 +21,8 @@ void get_rbg_hist_3(Mat& src,vector<Mat>& output,bool show_img=true);
 void get_rbg_hist(Mat& src,Mat& output,bool show_img=true);
 
 void draw_hist_img(const Mat &src, int hist_size,Mat &dst,Scalar color=Scalar(0,0,255));
+bool split_picture(Mat& src,vector<Mat>& result_mat);
+
 
 int main( int argc, char** argv )
 {
@@ -38,12 +40,12 @@ int main( int argc, char** argv )
    //Mat hist;
    //get_grey_hist(src,hist);
 
-    Mat src1=imread("/home/gumh/Pictures/blue1.jpg");
-    Mat src2=imread("/home/gumh/Pictures/blue2.jpg");
+//    Mat src1=imread("/home/gumh/Pictures/blue1.jpg");
+//    Mat src2=imread("/home/gumh/Pictures/blue2.jpg");
 
-    int64_t st=getTickCount();
-    MatND hsv_hist1;
-    get_hsv_hist(src1,hsv_hist1,true);
+//    int64_t st=getTickCount();
+//    MatND hsv_hist1;
+//    get_hsv_hist(src1,hsv_hist1,true);
 
    // MatND hsv_hist2;
    // get_hsv_hist(src2,hsv_hist2,true);
@@ -56,6 +58,49 @@ int main( int argc, char** argv )
     //vector<Mat> out_hists;
     //get_rbg_hist(src,out_hists);
 
+    string input_name="/home/gumh/Pictures/middle.jpeg";
+    Mat input_img=imread(input_name);
+    vector<Mat> out_region;
+
+    int64_t st=getTickCount();
+    split_picture(input_img,out_region);
+    for(int i=0;i<out_region.size();i++){
+        ostringstream os;
+        os<<"/home/gumh/Pictures/roi/"<<i<<".jpg";
+        imwrite(os.str(),out_region[i]);
+    }
+    MatND hist_0,hist_other;
+    get_hsv_hist(out_region[0],hist_0,false);
+    for(int method=0;method<=3;method++){
+
+        string method_n;
+        switch(method){
+        case 0:
+            method_n="CV_COMP_CORREL";
+            break;
+        case 1:
+            method_n="CV_COMP_CHISQR";
+            break;
+        case 2:
+            method_n="CV_COMP_INTERSECT";
+            break;
+        case 3:
+            method_n="CV_COMP_BHATTACHARYYA";
+            break;
+        }
+
+        LOG(INFO)<<method_n<<"-----------------";
+        for(int i=1;i<out_region.size();i++){
+            get_hsv_hist(out_region[i],hist_other,false);
+            double dist=compareHist(hist_0,hist_other,method);
+            LOG(INFO)<<method_n<<":(0 AND "<<i<<" ) dist="<<dist;
+        }
+        int64_t et=getTickCount();
+        LOG(INFO)<<method_n<<" cost time="<<(et-st)*1.0f/getTickFrequency()<<"s";
+        st=getTickCount();
+    }
+
+
 
     waitKey(0);
 }
@@ -67,15 +112,31 @@ bool split_picture(Mat& src,vector<Mat>& result_mat){
         cout<<"split_picture fail!picture is empty!"<<endl;
         return false;
     }
-    if(src.rows!=1920 || src.cols!=1080){
-        cout<<"split_picture fail!src.rows!=1920 || src.cols!=1080"<<endl;
-        return false;
+//    CHECK_EQ(src.rows,1920)<<"split_picture fail!src.rows!=1920";
+//    CHECK_EQ(src.cols,1080)<<"split_picture fail!src.cols!=1080";
+//    if(src.rows!=1920 || src.cols!=1080){
+//        cout<<"split_picture fail!src.rows!=1920 || src.cols!=1080"<<endl;
+//        return false;
+//    }
+
+    int width=src.cols;
+    int height=src.rows;
+
+    int roi_cnt=10;
+    int roi_width=src.cols/3;
+    int roi_height=src.rows/roi_cnt;
+    Rect raw_roi(roi_width,0,roi_width,height);
+    imwrite("/home/gumh/Pictures/roi/raw.jpeg",src(raw_roi));
+    for(int i=0;i<roi_cnt;i++){
+        Rect src_rect(roi_width,(roi_cnt-i-1)*roi_height,roi_width,roi_height);
+        result_mat.push_back(src(src_rect));
     }
 
-    for(int i=0;i<recordNumber;i++){
-        Rect src_rect(resizeParamTab[i].startX,resizeParamTab[i].startY,resizeParamTab[i].width,resizeParamTab[i].height);  // 0.3m~10.0m
-        result_mat[i] = src(src_rect);
-    }
+
+//    for(int i=0;i<recordNumber;i++){
+//        Rect src_rect(resizeParamTab[i].startX,resizeParamTab[i].startY,resizeParamTab[i].width,resizeParamTab[i].height);  // 0.3m~10.0m
+//        result_mat.push_back(src(src_rect));
+//    }
 
     return true;
 }
@@ -169,7 +230,7 @@ void get_hsv_hist(Mat& src,MatND &hist,bool show_img){
     if(show_img){
         ostringstream os,os_h,os_s,os_v;
         os<<"hsv_hsv"<<ti;
-        imshow(os.str(),hsv);
+        //imshow(os.str(),hsv);
         
         //
         vector<Mat> hsv_channels;
@@ -180,12 +241,12 @@ void get_hsv_hist(Mat& src,MatND &hist,bool show_img){
         Mat img_v=hsv_channels[2];
         
         
-        os_h<<"hsv_hsv_h"<<ti;
-        imshow(os_h.str(),img_h);
-        os_s<<"hsv_hsv_s"<<ti;
-        imshow(os_s.str(),img_s);
-        os_v<<"hsv_hsv_v"<<ti;
-        imshow(os_v.str(),img_v);
+//        os_h<<"hsv_hsv_h"<<ti;
+//        imshow(os_h.str(),img_h);
+//        os_s<<"hsv_hsv_s"<<ti;
+//        imshow(os_s.str(),img_s);
+//        os_v<<"hsv_hsv_v"<<ti;
+//        imshow(os_v.str(),img_v);
     }
 
     // Quantize the hue to 30 levels
