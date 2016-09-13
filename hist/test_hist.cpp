@@ -23,6 +23,12 @@ void get_rbg_hist(Mat& src,Mat& output,bool show_img=true);
 void draw_hist_img(const Mat &src, int hist_size,Mat &dst,Scalar color=Scalar(0,0,255));
 bool split_picture(Mat& src,vector<Mat>& result_mat);
 
+//----------------------------------------------------------
+void test_compare_region_hist(string input_name);
+void test_transform_img(string input_name,string output_name);
+
+//----------------------------------------------------------
+void show_gaussion(string input_name);
 
 int main( int argc, char** argv )
 {
@@ -40,15 +46,15 @@ int main( int argc, char** argv )
    //Mat hist;
    //get_grey_hist(src,hist);
 
-//    Mat src1=imread("/home/gumh/Pictures/blue1.jpg");
-//    Mat src2=imread("/home/gumh/Pictures/blue2.jpg");
+    Mat src1=imread("/home/gumh/Pictures/blue2.jpg");
+    Mat src2=imread("/home/gumh/feirui/test-roi/image-838.jpeg");
 
 //    int64_t st=getTickCount();
 //    MatND hsv_hist1;
 //    get_hsv_hist(src1,hsv_hist1,true);
 
-   // MatND hsv_hist2;
-   // get_hsv_hist(src2,hsv_hist2,true);
+//    MatND hsv_hist2;
+//    get_hsv_hist(src2,hsv_hist2,true);
 
    // double dist=compareHist(hsv_hist1,hsv_hist2,CV_COMP_BHATTACHARYYA);
    // int64_t et=getTickCount();
@@ -58,15 +64,57 @@ int main( int argc, char** argv )
     //vector<Mat> out_hists;
     //get_rbg_hist(src,out_hists);
 
-    string input_name="/home/gumh/Pictures/middle.jpeg";
+//    string input_name="/home/gumh/feirui/20160808/侧面/mypic31.jpeg";
+//    string output_name="/home/gumh/tmp/affine2.jpeg";
+
+//    test_transform_img(input_name,output_name);
+//    test_compare_region_hist(output_name);
+
+
+////    test_transform_img();
+
+    show_gaussion("/home/gumh/feirui/test-roi/test_middle.jpeg");
+//    waitKey(0);
+}
+
+
+void test_transform_img(string input_name,string output_name){
+    Mat src;
+    src=imread(input_name);
+    Mat dst(src.cols,src.rows,src.type());
+
+    transpose(src,dst);
+    imwrite("/home/gumh/tmp/b4-affine.jpeg",src);
+    imwrite("/home/gumh/tmp/affine1.jpeg",dst);
+    flip(dst,dst,0);
+   // Point2f center(src.cols/2,src.rows/2);
+   // Mat rot_mat=getRotationMatrix2D(center, 90, 1);
+   // warpAffine(src,dst,rot_mat,Size(dst.cols,dst.rows));
+
+//    imwrite("/home/gumh/tmp/affine2.jpeg",dst);
+    imwrite(output_name,dst);
+}
+
+void test_compare_region_hist(string input_name){
+
+    //string input_name="/home/gumh/tmp/affine2.jpeg";
     Mat input_img=imread(input_name);
+
+    Rect mid_rect(310,90,300,1700);
+    imwrite("/home/gumh/feirui/test-roi/mid_part.jpeg",input_img(mid_rect));
+
+    input_img=input_img(mid_rect);
+    //return;
+    //Mat middle_part=src()
+
     vector<Mat> out_region;
 
     int64_t st=getTickCount();
+    int stand_idx=2;
     split_picture(input_img,out_region);
     for(int i=0;i<out_region.size();i++){
         ostringstream os;
-        os<<"/home/gumh/Pictures/roi/"<<i<<".jpg";
+        os<<"/home/gumh/feirui/test-roi/"<<i<<".jpg";
         imwrite(os.str(),out_region[i]);
     }
     MatND hist_0,hist_other;
@@ -89,22 +137,31 @@ int main( int argc, char** argv )
             break;
         }
 
-        LOG(INFO)<<method_n<<"-----------------";
-        for(int i=1;i<out_region.size();i++){
+        LOG(INFO)<<method_n<<"----------------- compare with 0";
+        //compare with region 0
+        for(int i=0;i<out_region.size();i++){
+            if(i==stand_idx){
+                continue;
+            }
             get_hsv_hist(out_region[i],hist_other,false);
             double dist=compareHist(hist_0,hist_other,method);
-            LOG(INFO)<<method_n<<":(0 AND "<<i<<" ) dist="<<dist;
+            LOG(INFO)<<method_n<<":("<<stand_idx<<" AND "<<i<<" ) dist="<<dist;
         }
+        //alwayrs compare with next one
+//         LOG(INFO)<<method_n<<"----------------- compare with next one";
+//        for(int i=0;i<out_region.size()-1;i++){
+//            get_hsv_hist(out_region[i],hist_0,false);
+//            get_hsv_hist(out_region[i+1],hist_other,false);
+//            double dist=compareHist(hist_0,hist_other,method);
+//            LOG(INFO)<<method_n<<":("<<i<<" AND "<<(i+1)<<" ) dist="<<dist;
+//        }
         int64_t et=getTickCount();
         LOG(INFO)<<method_n<<" cost time="<<(et-st)*1.0f/getTickFrequency()<<"s";
         st=getTickCount();
     }
 
 
-
-    waitKey(0);
 }
-
 
 bool split_picture(Mat& src,vector<Mat>& result_mat){
 
@@ -334,3 +391,11 @@ void get_grey_hist(Mat& src,Mat& out_hist,bool show_img){
 
 }
 
+void show_gaussion(string input_name){
+    Mat src=imread(input_name);
+    Mat dst;
+    GaussianBlur( src, dst, Size( 3, 3 ), 0);
+    imshow("src",src);
+    imshow("dst",dst);
+    waitKey(0);
+}
