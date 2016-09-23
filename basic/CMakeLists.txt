@@ -7,3 +7,7 @@ target_link_libraries(test_shared_ptr ${MY_LINKER_LIBS})
 
 add_executable(test_poly_line  test_poly_line.cpp)
 target_link_libraries(test_poly_line ${MY_LINKER_LIBS})
+
+add_executable(test_hough_line  test_hough_line.cpp)
+target_link_libraries(test_hough_line ${MY_LINKER_LIBS})
+

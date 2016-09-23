@@ -201,6 +201,7 @@ int main(int argc, char const **argv)
       vector<Point2f> imagePoints;
       projectPoints(obj_point,rvecs[i],tvecs[i],K,D,imagePoints); //重投影
 
+      cout<<"tvecs["<<i<<"]="<<tvecs[i]<<endl;
       if(i==0){
 //          for(int j=0;j<img_point.size();j++){
 //              cout<<"img_p:("<<img_point[j].x<<","<<img_point[j].y<<") reprj_p:("<<imagePoints[j].x<<","<<imagePoints[j].y<<")"<<endl;
