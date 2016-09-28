@@ -17,6 +17,68 @@ vector< vector< Point2f > > left_img_points;
 Mat img, gray;
 Size im_size;
 
+
+
+static bool readStringList( const string& filename, vector<string>& l )
+{
+    l.resize(0);
+    FileStorage fs(filename, FileStorage::READ);
+    if( !fs.isOpened() )
+        return false;
+    FileNode n = fs.getFirstTopLevelNode();
+    if( n.type() != FileNode::SEQ )
+        return false;
+    FileNodeIterator it = n.begin(), it_end = n.end();
+    for( ; it != it_end; ++it )
+        l.push_back((string)*it);
+    return true;
+}
+
+
+
+void setup_calibration_by_file_list(int board_width, int board_height, int num_imgs,
+                       float square_size, string& file_list_path,vector<Mat>& images) {
+  Size board_size = Size(board_width, board_height);
+  int board_n = board_width * board_height;
+
+
+  vector<string> files;
+  readStringList(file_list_path,files);
+  for (int k = 0; k < files.size(); k++) {
+    string img_file=files[k];
+//    cout<<"file="<<img_file<<endl;
+    img = imread(img_file, CV_LOAD_IMAGE_COLOR);
+    if(img.empty()){
+        continue;
+    }
+    cv::cvtColor(img, gray, CV_BGR2GRAY);
+
+    bool found = false;
+    found = cv::findChessboardCorners(img, board_size, corners,
+                                      CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+    cout<<"file:"<<img_file<<" found="<<found<<endl;
+    if (found)
+    {
+      cornerSubPix(gray, corners, cv::Size(5, 5), cv::Size(-1, -1),
+                   TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
+      drawChessboardCorners(gray, board_size, corners, found);
+    }
+
+    vector< Point3f > obj;
+    for (int i = 0; i < board_height; i++)
+      for (int j = 0; j < board_width; j++)
+        obj.push_back(Point3f((float)j * square_size, (float)i * square_size, 0));
+
+    if (found) {
+      cout << k << ". Found corners!" << endl;
+      image_points.push_back(corners);
+      object_points.push_back(obj);
+
+      images.push_back(img);
+    }
+  }
+}
+
 void setup_calibration(int board_width, int board_height, int num_imgs, 
                        float square_size, char* imgs_directory, char* imgs_filename,
                        char* extension,vector<Mat>& images) {
@@ -129,12 +191,12 @@ void drawDotline(Point s, Point e,Mat& workimg)
 
 int main(int argc, char const **argv)
 {
-  int board_width=11, board_height=8, num_imgs=16;
+  int board_width=13, board_height=9, num_imgs=16;
   float square_size=20.0;
-  char* imgs_directory="/home/gumh/qtcreator-workspace/ImageTest/picture/";
-  char* imgs_filename="L";
-  char* out_file="intrinsic.yml";
-  char* extension="jpeg";
+//  char* imgs_directory="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/left/";
+//  char* imgs_filename="left";
+
+//  char* extension="jpeg";
 
 //  static struct poptOption options[] = {
 //    { "board_width",'w',POPT_ARG_INT,&board_width,0,"Checkerboard width","NUM" },
@@ -154,8 +216,14 @@ int main(int argc, char const **argv)
 //  while((c = popt.getNextOpt()) >= 0) {}
 
   vector<Mat> images;
-  setup_calibration(board_width, board_height, num_imgs, square_size,
-                   imgs_directory, imgs_filename, extension,images);
+//  setup_calibration(board_width, board_height, num_imgs, square_size,
+//                   imgs_directory, imgs_filename, extension,images);
+
+
+  char* out_file="left_intrinsic.yml";
+  string file_list_file="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/left_file.yml";
+   setup_calibration_by_file_list(board_width, board_height, num_imgs, square_size,
+                           file_list_file,images);
 
   printf("Starting Calibration\n");
   Mat K;
@@ -198,8 +266,8 @@ int main(int argc, char const **argv)
       Mat view=images[i].clone();
       vector<Point2f> img_point=image_points[i];
       vector<Point3f> obj_point=object_points[i];
-      vector<Point2f> imagePoints;
-      projectPoints(obj_point,rvecs[i],tvecs[i],K,D,imagePoints); //重投影
+      vector<Point2f> proj_image_points;
+      projectPoints(obj_point,rvecs[i],tvecs[i],K,D,proj_image_points); //重投影.受畸变影响后的最终位置
 
       cout<<"tvecs["<<i<<"]="<<tvecs[i]<<endl;
       if(i==0){
@@ -210,8 +278,11 @@ int main(int argc, char const **argv)
 
 
 
-      drawChessboardCorners( view, boardSize, Mat(img_point), 1 );
-      drawChessboardCorners( view, boardSize, Mat(imagePoints), 1 );
+//      drawChessboardCorners( view, boardSize, Mat(img_point), 1 );
+      drawChessboardCorners( view, boardSize, Mat(proj_image_points), 1 );
+      char name[128];
+      sprintf(name,"原图与利用kd矩阵投影得到的点-%d.jpeg",i);
+      imwrite(name,view);
 
       //each project error
       vector<Point2f> imagePoints2;
@@ -219,16 +290,13 @@ int main(int argc, char const **argv)
                              D, imagePoints2);
       err = norm(Mat(img_point), Mat(imagePoints2), CV_L2);
 
-
       int n = (int)obj_point.size();
       perViewErrors[i] = (float) std::sqrt(err*err/n);
       cout<<"pict:"<<i<<",err="<<err<<",perViewErrors="<<perViewErrors[i]<<endl;
       totalErr        += err*err;
       totalPoints     += n;
 
-      char name[128];
-      sprintf(name,"img-point-%d.jpeg",i);
-      imwrite(name,view);
+
 
       //矫正
       Mat g1,g2;
@@ -240,38 +308,47 @@ int main(int argc, char const **argv)
       //计算矫正后的角点的新坐标，其实就是去除畸变的影响，正常的投影位置
       vector<Point2f> imagePoints_no_dist;
       projectPoints( Mat(obj_point), rvecs[i], tvecs[i], K,
-                             Mat(), imagePoints_no_dist);
+                             Mat(), imagePoints_no_dist);   //理想的投影，是没有畸变的，所以理想的位置不用畸变参数
 
-      //在矫正后的图上画线，看交点
-      drawDotline(imagePoints_no_dist[0],imagePoints_no_dist[77],view);
-      line(view,imagePoints_no_dist[0],imagePoints_no_dist[77],Scalar(255,0,0),2,CV_AA);
+//      //在矫正后的图上画线，看交点
+//      drawDotline(imagePoints_no_dist[0],imagePoints_no_dist[77],view);
+//      line(view,imagePoints_no_dist[0],imagePoints_no_dist[77],Scalar(255,0,0),2,CV_AA);
 
-      drawDotline(imagePoints_no_dist[10],imagePoints_no_dist[87],view);
-      line(view,imagePoints_no_dist[10],imagePoints_no_dist[87],Scalar(255,0,0),2,CV_AA);
-//      cout<<"imagePoints[0]="<<imagePoints[0]<<",imagePoints[11]="<<imagePoints[11]<<endl;
-      rectangle(view,Rect(100,100,20,20),Scalar(0,255,255),2);
-      if(i==0)
-      for(int m=0;m<imagePoints.size();m++){
-          Point2f p=imagePoints[m];
-          cout<<m<<":"<<p.x<<","<<p.y<<endl;
-      }
+//      drawDotline(imagePoints_no_dist[10],imagePoints_no_dist[87],view);
+//      line(view,imagePoints_no_dist[10],imagePoints_no_dist[87],Scalar(255,0,0),2,CV_AA);
+////      cout<<"imagePoints[0]="<<imagePoints[0]<<",imagePoints[11]="<<imagePoints[11]<<endl;
+//      rectangle(view,Rect(100,100,20,20),Scalar(0,255,255),2);
+//      if(i==0)
+//      for(int m=0;m<imagePoints.size();m++){
+//          Point2f p=imagePoints[m];
+//          cout<<m<<":"<<p.x<<","<<p.y<<endl;
+//      }
+
 
       drawChessboardCorners( view, boardSize, Mat(imagePoints_no_dist), 1 );//画点，对比
-      sprintf(name,"img-point-rectifyed-%d.jpeg",i);
+      sprintf(name,"undistort矫正后的图与点-%d.jpeg",i);
       imwrite(name,view);
 
-      //第二种矫正
-      Mat temp2 = images[i].clone();
-      remap(temp2, rview, map1, map2, INTER_LINEAR);
-      cvtColor(rview.clone(),g2,CV_BGR2GRAY);
-      drawChessboardCorners( rview, boardSize, Mat(imagePoints), 1 );//还是用用原来的图像坐标来画点，对比
-      sprintf(name,"img-point-rectifyed-2-%d.jpeg",i);
-      imwrite(name,rview);
 
-       Mat temp3 = images[i].clone();
-      drawChessboardCorners( temp3, boardSize, Mat(imagePoints), 1 );//用project得到的坐标画点，对比
-      sprintf(name,"img-point-reproj-%d.jpeg",i);
-      imwrite(name,temp3);
+
+//      //第二种矫正
+      Mat temp2 = images[i].clone();
+      remap(temp2, rview, map1, map2, INTER_LINEAR,BORDER_CONSTANT);
+      Mat rview2=rview.clone();
+      sprintf(name,"remap矫正图-%d.jpeg",i);
+      imwrite(name,rview);
+      cvtColor(rview.clone(),g2,CV_BGR2GRAY);
+      drawChessboardCorners( rview, boardSize, Mat(proj_image_points), 1 );//还是用用原来的图像坐标来画点，对比
+      sprintf(name,"矫正后图未矫正的点-%d.jpeg",i);
+      imwrite(name,rview);
+      drawChessboardCorners( rview2, boardSize, Mat(imagePoints_no_dist), 1 );//理想的图，与理想的点
+      sprintf(name,"矫正后的图与点-%d.jpeg",i);
+      imwrite(name,rview2);
+
+//       Mat temp3 = images[i].clone();
+//      drawChessboardCorners( temp3, boardSize, Mat(imagePoints), 1 );//用project得到的坐标画点，对比
+//      sprintf(name,"img-point-reproj-%d.jpeg",i);
+//      imwrite(name,temp3);
 
       //比较两种矫正
       if(i==0){

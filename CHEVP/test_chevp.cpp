@@ -10,13 +10,15 @@ using namespace cv;
 void preprocess(Mat& src,Mat& gray,Mat& edge){
     Mat erode_pic,dilate_pic;
 //    blur(src,src,Size(5,5),Point(-1,-1));
-    GaussianBlur( src, src, Size(5,5), 0, 0, BORDER_DEFAULT );
+    GaussianBlur( src, src, Size(3,3), 0, 0, BORDER_DEFAULT );
     //    erode(src, erode_pic,Mat());
     //    imshow("erode_pic",erode_pic);
     //    dilate(erode_pic,dilate_pic,Mat());
     //    imshow("dilate_pic",dilate_pic);
 
+
     cvtColor(src,gray,CV_BGR2GRAY);
+//    Laplacian( gray, gray, CV_8UC1, 3, 1, 0, BORDER_DEFAULT );
     Canny(gray,edge,100,100);
 
 
@@ -25,10 +27,12 @@ void preprocess(Mat& src,Mat& gray,Mat& edge){
 void get_lines(Mat& edge,float min_k_pos,float max_k_pos,float min_k_neg,float max_k_neg,vector<Vec4i> &lines){
 
 
-    vector<Vec4i> tmp_lines;
-    HoughLinesP(edge,tmp_lines,1,CV_PI/180,50,10,2);
+    vector<Vec4i> tmp_lines,tmp_lines2;
+    HoughLinesP(edge,tmp_lines,1,CV_PI/180,50,6,2);
 
     float k;
+    int neg_slope_max_x=0;
+    int pos_slope_min_x=0;
     for(size_t i=0;i<tmp_lines.size();i++){
         Vec4i l=tmp_lines[i];
         if(l[2]==l[0]){
@@ -38,13 +42,30 @@ void get_lines(Mat& edge,float min_k_pos,float max_k_pos,float min_k_neg,float m
         }
         k=(double)(l[3]-l[1])*1.0/(l[2]-l[0]);
 
-
         if(k<0 && fabs(k)>=min_k_neg && fabs(k)<=max_k_neg
                 ||
            k>=0 && fabs(k)>=min_k_pos && fabs(k)<=max_k_pos){
-            lines.push_back(l);
+            tmp_lines2.push_back(l);
+
+            if(k<0){
+                if(l[2]>neg_slope_max_x){
+                    neg_slope_max_x=l[2];
+                }
+                if(l[0]>neg_slope_max_x){
+                    neg_slope_max_x=l[0];
+                }
+            }
+            if(k>0){
+                if(l[3]<pos_slope_min_x){
+                    pos_slope_min_x=l[3];
+                }
+                if(l[1]<pos_slope_min_x){
+                    pos_slope_min_x=l[1];
+                }
+            }
         }
     }
+
     cout<<"valid_line_cnt="<<lines.size()<<endl;
 
 }
@@ -76,7 +97,7 @@ void draw_lines(Mat& src,vector<Vec4i>& lines,Point offset_p){
 
 }
 
-int estimate_vps(Mat& src,vector<Vec4i> &lines){
+int estimate_vps(Mat& src,vector<Vec4i> &lines,Point offset_p){
     // Multiple vanishing points
     std::vector<cv::Mat> vps;			// vector of vps: vps[vpNum], with vpNum=0...numDetectedVps
     std::vector<std::vector<int> > CS;	// index of Consensus Set for all vps: CS[vpNum] is a vector containing indexes of lineSegments belonging to Consensus Set of vp numVp
@@ -86,8 +107,8 @@ int estimate_vps(Mat& src,vector<Vec4i> &lines){
 
     vector<vector<Point>> lineSegments;
     for(Vec4i line:lines){
-        Point sp(line[0],line[1]);
-        Point ep(line[2],line[3]);
+        Point sp(line[0]+offset_p.x,line[1]+offset_p.y);
+        Point ep(line[2]+offset_p.x,line[3]+offset_p.y);
         vector<Point> seg;
         seg.push_back(sp);
         seg.push_back(ep);
@@ -130,7 +151,7 @@ int main(int argc,char* argv[]){
     Mat gray,edge;
     Mat src;
 
-    string dir="/home/gumh/TrainData/KITTI/04/image_0/";
+    string dir="/home/gumh/TrainData/KITTI/04/image_0/";//home/gumh/Pictures/road/";//
     vector<string> all_files=getAllFilesWithPathFromDir(dir);
     std::sort(all_files.begin(),all_files.end(),SortByName);
 
@@ -144,7 +165,11 @@ int main(int argc,char* argv[]){
 
 
     int m=0;
+    int width,height;
     while(true){
+        if(m>=all_files.size()){
+            m=0;
+        }
         string file=all_files[m];
         cout<<"file="<<file<<endl;
         src=imread(file);
@@ -153,12 +178,14 @@ int main(int argc,char* argv[]){
             ++m;
             continue;
         }
+        width=src.cols;
+        height=src.rows;
 
         preprocess(src,gray,edge);
 
-        Point offset_p(230,153);
-        int width=907-232;
-        Rect roi(offset_p.x,offset_p.y,width,src.rows-offset_p.y);
+        Point offset_p(width/4,height/3);
+        int roi_w=width/2;
+        Rect roi(offset_p.x,offset_p.y,roi_w,src.rows-offset_p.y);
 
 
         vector<Vec4i> lines;
@@ -168,7 +195,7 @@ int main(int argc,char* argv[]){
         rectangle(src,roi,1);
 
         //vp
-        estimate_vps(src,lines);
+        estimate_vps(src,lines,offset_p);
 
         getFilePart(file,filePath,OnlyName,suffix);
 
