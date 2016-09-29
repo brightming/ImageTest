@@ -56,7 +56,7 @@ static int print_help()
 
 
 static void
-StereoCalib(const vector<string>& imagelist, Size boardSize,bool displayCorners = false, bool useCalibrated=true, bool showRectified=true)
+StereoCalib(const vector<string>& imagelist, Size boardSize,string& left_intrinsic_file,string& right_intrinsic_file,bool displayCorners = false, bool useCalibrated=true, bool showRectified=true)
 {
     if( imagelist.size() % 2 != 0 )
     {
@@ -169,20 +169,36 @@ StereoCalib(const vector<string>& imagelist, Size boardSize,bool displayCorners 
     cameraMatrix[1] = initCameraMatrix2D(objectPoints,imagePoints[1],imageSize,0);
     Mat R, T, E, F;
 
-    FileStorage left_yml("left_intrinsic.yml",FileStorage::READ);
-    FileStorage right_yml("right_intrinsic.yml",FileStorage::READ);
-    if(!left_yml.isOpened()){
 
-    }else{
-        left_yml["K"]>>cameraMatrix[0];
-        left_yml["D"]>>distCoeffs[0];
+    bool use_spec_intrinsic=false;
+    if(!left_intrinsic_file.empty()){
+        FileStorage left_yml(left_intrinsic_file,FileStorage::READ);
+        if(left_yml.isOpened()){
+            cout<<"use specified left intrinsic file="<<left_intrinsic_file<<endl;
+            left_yml["K"]>>cameraMatrix[0];
+            left_yml["D"]>>distCoeffs[0];
+            use_spec_intrinsic=true;
+            left_yml.release();
+        }
     }
-    if(!right_yml.isOpened()){
 
-    }else{
-        right_yml["K"]>>cameraMatrix[1];
-        right_yml["D"]>>distCoeffs[1];
+    if(!right_intrinsic_file.empty()){
+        FileStorage right_yml(right_intrinsic_file,FileStorage::READ);
+        if(right_yml.isOpened()){
+            cout<<"use specified right intrinsic file="<<right_intrinsic_file<<endl;
+            right_yml["K"]>>cameraMatrix[1];
+            right_yml["D"]>>distCoeffs[1];
+            use_spec_intrinsic=true;
+            right_yml.release();
+        }
     }
+
+
+
+    cout<<"left[K]="<<cameraMatrix[0]<<endl;
+    cout<<"left[D]="<<distCoeffs[0]<<endl;
+    cout<<"right[K]="<<cameraMatrix[1]<<endl;
+    cout<<"right[D]="<<distCoeffs[1]<<endl;
 
 
     double rms = stereoCalibrate(objectPoints, imagePoints[0], imagePoints[1],
@@ -191,7 +207,7 @@ StereoCalib(const vector<string>& imagelist, Size boardSize,bool displayCorners 
                     imageSize, R, T, E, F,
                     CALIB_FIX_ASPECT_RATIO +
                     CALIB_ZERO_TANGENT_DIST +
-                    CALIB_FIX_INTRINSIC+         //we prvided instrinsic parameters
+                    (use_spec_intrinsic?CALIB_FIX_INTRINSIC:CALIB_USE_INTRINSIC_GUESS)+//CALIB_FIX_INTRINSIC+         //we prvided instrinsic parameters
                     /*CALIB_USE_INTRINSIC_GUESS +*/
                     CALIB_SAME_FOCAL_LENGTH +
                     CALIB_RATIONAL_MODEL +
@@ -248,6 +264,8 @@ StereoCalib(const vector<string>& imagelist, Size boardSize,bool displayCorners 
                   imageSize, R, T, R1, R2, P1, P2, Q,
                   CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
 
+    cout<<"validRoi[0]="<<validRoi[0]<<endl;
+    cout<<"validRoi[1]="<<validRoi[1]<<endl;
     fs.open("stereo_extrinsics.yml", FileStorage::WRITE);
     if( fs.isOpened() )
     {
@@ -322,6 +340,10 @@ StereoCalib(const vector<string>& imagelist, Size boardSize,bool displayCorners 
         {
             Mat img = imread(goodImageList[i*2+k], 0), rimg, cimg;
             remap(img, rimg, rmap[k][0], rmap[k][1], INTER_LINEAR);
+            imshow("img",img);
+            imshow("rimg",rimg);
+            waitKey(0);
+
             cvtColor(rimg, cimg, COLOR_GRAY2BGR);
             Mat canvasPart = !isVerticalStereo ? canvas(Rect(w*k, 0, w, h)) : canvas(Rect(0, h*k, w, h));
             resize(cimg, canvasPart, canvasPart.size(), 0, 0, INTER_AREA);
@@ -371,7 +393,8 @@ int main(int argc, char** argv)
     if (parser.has("help"))
         return print_help();
     showRectified = true;//!parser.has("nr");
-    imagelistfn = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/stereo_file.yml";//parser.get<string>("@input");
+//    imagelistfn = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/3516dualboard-stereo/stereo.yml";//parser.get<string>("@input");
+    imagelistfn = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/3516dualboard-stereo/stereo_file.yml";//parser.get<string>("@input");
     boardSize.width = 13;//parser.get<int>("w");
     boardSize.height = 9;//parser.get<int>("h");
 //    if (!parser.check())
@@ -387,6 +410,9 @@ int main(int argc, char** argv)
         return print_help();
     }
 
-    StereoCalib(imagelist, boardSize,false, true, showRectified);
+
+    string left_intrinsic_file="dual-board-left_intrinsic.yml";
+    string right_intrinsic_file="dual-board-right_intrinsic.yml";
+    StereoCalib(imagelist, boardSize,left_intrinsic_file,right_intrinsic_file,false, false, showRectified);
     return 0;
 }

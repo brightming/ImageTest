@@ -64,8 +64,9 @@ int main(int argc, char** argv)
 
 
 
-    std::string img1_filename = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/left-realdist-0.000000-realangle-0.000000-1589881779.jpeg";
-    std::string img2_filename = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/right-realdist-0.000000-realangle-0.000000-1589881779.jpeg";
+
+    std::string img1_filename = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/3516dualboard-stereo/3D_1L_19700101-084919-909.jpg";
+    std::string img2_filename = "/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/3516dualboard-stereo/3D_1R_19700101-084919-805.jpg";
     std::string intrinsic_filename = "";
     std::string extrinsic_filename = "";
     std::string disparity_filename = "";

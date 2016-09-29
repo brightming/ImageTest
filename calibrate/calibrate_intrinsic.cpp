@@ -47,10 +47,11 @@ void setup_calibration_by_file_list(int board_width, int board_height, int num_i
   for (int k = 0; k < files.size(); k++) {
     string img_file=files[k];
 //    cout<<"file="<<img_file<<endl;
-    img = imread(img_file, CV_LOAD_IMAGE_COLOR);
-    if(img.empty()){
+    Mat tmp_img = imread(img_file, CV_LOAD_IMAGE_COLOR);
+    if(tmp_img.empty()){
         continue;
     }
+    img=tmp_img;
     cv::cvtColor(img, gray, CV_BGR2GRAY);
 
     bool found = false;
@@ -70,7 +71,7 @@ void setup_calibration_by_file_list(int board_width, int board_height, int num_i
         obj.push_back(Point3f((float)j * square_size, (float)i * square_size, 0));
 
     if (found) {
-      cout << k << ". Found corners!" << endl;
+//      cout << k << ". Found corners!" << endl;
       image_points.push_back(corners);
       object_points.push_back(obj);
 
@@ -192,7 +193,7 @@ void drawDotline(Point s, Point e,Mat& workimg)
 int main(int argc, char const **argv)
 {
   int board_width=13, board_height=9, num_imgs=16;
-  float square_size=20.0;
+  float square_size=10.0;
 //  char* imgs_directory="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/left/";
 //  char* imgs_filename="left";
 
@@ -220,9 +221,9 @@ int main(int argc, char const **argv)
 //                   imgs_directory, imgs_filename, extension,images);
 
 
-  char* out_file="right_intrinsic.yml";
-  string file_list_file="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/right_file.yml";
-   setup_calibration_by_file_list(board_width, board_height, num_imgs, square_size,
+  char* out_file="dual-board-left_intrinsic.yml";
+  string file_list_file="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/3516dualboard-stereo/left_file.yml";
+  setup_calibration_by_file_list(board_width, board_height, num_imgs, square_size,
                            file_list_file,images);
 
   printf("Starting Calibration\n");
@@ -233,6 +234,7 @@ int main(int argc, char const **argv)
   flag |= CV_CALIB_FIX_K4;
   flag |= CV_CALIB_FIX_K5;
 
+  cout<<"img.size="<<img.size()<<endl;
   float reprojErr=myCalibrateCamera(object_points, image_points, img.size(), K, D, rvecs, tvecs, flag);
 
   FileStorage fs(out_file, FileStorage::WRITE);
@@ -380,6 +382,13 @@ int main(int argc, char const **argv)
           cout<<"out_tvec=\n"<<out_tvec<<endl;
 
       }
+
+      Mat ori_small,collect_small;
+      resize(images[i],ori_small,Size(images[i].cols/2,images[i].rows/2));
+      resize(rview2,collect_small,Size(rview.cols/2,rview.rows/2));
+      imshow("ori",ori_small);
+      imshow("collect",collect_small);
+      waitKey(0);
 
 
   }
