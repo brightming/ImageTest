@@ -220,8 +220,8 @@ int main(int argc, char const **argv)
 //                   imgs_directory, imgs_filename, extension,images);
 
 
-  char* out_file="left_intrinsic.yml";
-  string file_list_file="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/left_file.yml";
+  char* out_file="right_intrinsic.yml";
+  string file_list_file="/home/gumh/qtcreator-workspace/ImageTest/picture/forcalib1520/20160928/stereo/right_file.yml";
    setup_calibration_by_file_list(board_width, board_height, num_imgs, square_size,
                            file_list_file,images);
 
@@ -249,13 +249,17 @@ int main(int argc, char const **argv)
   Size boardSize(board_width,board_height);
   Mat view, rview, map1, map2;
   Rect valid_roi;
-  Mat newMatrix=getOptimalNewCameraMatrix(K, D, img.size(), 1, img.size(), 0,&valid_roi);
+
+  //alpha=0 ,则不管下面initUndistortRectifyMap用K还是newMatrix，remap得到的都是和undistort一样的，即只有有效部分。
+  //alpha=1,如果下面initUndistortRectifyMap用K，得到的和undistort一样，否则，得到的不一样
+  Mat newMatrix=getOptimalNewCameraMatrix(K, D, img.size(), 0, img.size(), 0,&valid_roi);
+
   cout<<"valid_roi="<<valid_roi<<endl;
   cout<<"K="<<K<<endl;
   cout<<"D="<<D<<endl;
   cout<<"newMatrix="<<newMatrix<<endl;
   initUndistortRectifyMap(K, D, Mat(),
-                          newMatrix,
+                          K/*newMatrix*/,   //用K参数，然后调用remap，得到的和undistort一样；用newMatrix，就会不同(参考上面的说明)
                           img.size(), CV_16SC2, map1, map2);
 
   int totalPoints = 0;
@@ -269,7 +273,7 @@ int main(int argc, char const **argv)
       vector<Point2f> proj_image_points;
       projectPoints(obj_point,rvecs[i],tvecs[i],K,D,proj_image_points); //重投影.受畸变影响后的最终位置
 
-      cout<<"tvecs["<<i<<"]="<<tvecs[i]<<endl;
+//      cout<<"tvecs["<<i<<"]="<<tvecs[i]<<endl;
       if(i==0){
 //          for(int j=0;j<img_point.size();j++){
 //              cout<<"img_p:("<<img_point[j].x<<","<<img_point[j].y<<") reprj_p:("<<imagePoints[j].x<<","<<imagePoints[j].y<<")"<<endl;
@@ -292,7 +296,7 @@ int main(int argc, char const **argv)
 
       int n = (int)obj_point.size();
       perViewErrors[i] = (float) std::sqrt(err*err/n);
-      cout<<"pict:"<<i<<",err="<<err<<",perViewErrors="<<perViewErrors[i]<<endl;
+//      cout<<"pict:"<<i<<",err="<<err<<",perViewErrors="<<perViewErrors[i]<<endl;
       totalErr        += err*err;
       totalPoints     += n;
 
@@ -302,8 +306,10 @@ int main(int argc, char const **argv)
       Mat g1,g2;
 
       Mat temp = images[i].clone();
-      undistort(temp, view, K, D);
+      undistort(temp, view, K, D);//矫正后的内容只有中间的一部分，但是大小没变
       cvtColor(view.clone(),g1,CV_BGR2GRAY);
+      sprintf(name,"undistort矫正图-%d.jpeg",i);
+      imwrite(name,view);
 
       //计算矫正后的角点的新坐标，其实就是去除畸变的影响，正常的投影位置
       vector<Point2f> imagePoints_no_dist;
@@ -333,17 +339,21 @@ int main(int argc, char const **argv)
 
 //      //第二种矫正
       Mat temp2 = images[i].clone();
-      remap(temp2, rview, map1, map2, INTER_LINEAR,BORDER_CONSTANT);
+      remap(temp2, rview, map1, map2, INTER_LINEAR,BORDER_CONSTANT);//矫正后还保留全部内容
       Mat rview2=rview.clone();
       sprintf(name,"remap矫正图-%d.jpeg",i);
       imwrite(name,rview);
       cvtColor(rview.clone(),g2,CV_BGR2GRAY);
       drawChessboardCorners( rview, boardSize, Mat(proj_image_points), 1 );//还是用用原来的图像坐标来画点，对比
-      sprintf(name,"矫正后图未矫正的点-%d.jpeg",i);
+      sprintf(name,"remap矫正后图未矫正的点-%d.jpeg",i);
       imwrite(name,rview);
       drawChessboardCorners( rview2, boardSize, Mat(imagePoints_no_dist), 1 );//理想的图，与理想的点
-      sprintf(name,"矫正后的图与点-%d.jpeg",i);
+      sprintf(name,"remap矫正后的图与点-%d.jpeg",i);
       imwrite(name,rview2);
+
+      //验证在initUndistortRectifyMap用newMatrix时得到的valid_roi的情况
+      sprintf(name,"remap矫正后的roi-%d.jpeg",i);
+      imwrite(name,rview(valid_roi));
 
 //       Mat temp3 = images[i].clone();
 //      drawChessboardCorners( temp3, boardSize, Mat(imagePoints), 1 );//用project得到的坐标画点，对比
@@ -357,6 +367,18 @@ int main(int argc, char const **argv)
 //          imshow("1",g1);
 //          imshow("2",g2);
 //          waitKey(0);
+      }
+
+      if(i==0){
+          Mat out_rvec,out_tvec;
+          solvePnP(obj_point,img_point,K,D,out_rvec,out_tvec);
+          //compare rvecs[0] and out_rvec ,tvecs[0] and out_tvec
+          cout<<"rvecs[0]=\n"<<rvecs[0]<<endl;
+          cout<<"out_rvec=\n"<<out_rvec<<endl;
+
+          cout<<"tvecs[0]=\n"<<tvecs[0]<<endl;
+          cout<<"out_tvec=\n"<<out_tvec<<endl;
+
       }
 
 
