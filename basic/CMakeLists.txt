@@ -11,3 +11,7 @@ target_link_libraries(test_poly_line ${MY_LINKER_LIBS})
 add_executable(test_hough_line  test_hough_line.cpp)
 target_link_libraries(test_hough_line ${MY_LINKER_LIBS})
 
+add_executable(convert_minst_to_jpg  convert_minst_to_jpg.cpp)
+target_link_libraries(convert_minst_to_jpg ${MY_LINKER_LIBS})
+
+

@@ -17,8 +17,9 @@ list(APPEND MY_LINKER_LIBS ${GLOG_LIBRARIES})
 
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-#add_subdirectory(basic)
+add_subdirectory(basic)
 #add_subdirectory(hist)
 #add_subdirectory(chapter2)
 #add_subdirectory(CHEVP)
 add_subdirectory(calibrate)
+add_subdirectory(morphological)
