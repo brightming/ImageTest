@@ -15,3 +15,9 @@ add_executable(convert_minst_to_jpg  convert_minst_to_jpg.cpp)
 target_link_libraries(convert_minst_to_jpg ${MY_LINKER_LIBS})
 
 
+add_executable(test_dft  test_dft.cpp)
+target_link_libraries(test_dft ${MY_LINKER_LIBS})
+
+add_executable(test_dft_rotation  test_dft_rotation.cpp)
+target_link_libraries(test_dft_rotation ${MY_LINKER_LIBS})
+
