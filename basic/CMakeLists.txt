@@ -21,3 +21,11 @@ target_link_libraries(test_dft ${MY_LINKER_LIBS})
 add_executable(test_dft_rotation  test_dft_rotation.cpp)
 target_link_libraries(test_dft_rotation ${MY_LINKER_LIBS})
 
+add_executable(test_generate_black_white  test_generate_black_white.cpp)
+target_link_libraries(test_generate_black_white ${MY_LINKER_LIBS})
+
+add_executable(test_color_dist  test_color_dist.cpp)
+target_link_libraries(test_color_dist ${MY_LINKER_LIBS})
+
+
+
