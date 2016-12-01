@@ -1,0 +1,6 @@
+project(common)
+aux_source_directory(. SRC_LIST)
+add_library(${PROJECT_NAME} ${SRC_LIST})
+list(APPEND MY_LINKER_LIBS ${PROJECT_NAME})
+set(MY_LINKER_LIBS ${MY_LINKER_LIBS} PARENT_SCOPE)
+message(STATUS "IN common--MY LIBS--${MY_LIBS}")
