@@ -31,8 +31,8 @@ int high_threshold = 150;
 // Region-of-interest vertices
 //We want a trapezoid shape, with bottom edge at the bottom of the image
 float trap_bottom_width = 0.85 ;// # width of bottom edge of trapezoid, expressed as percentage of image width
-float trap_top_width = 0.07 ;// # ditto for top edge of trapezoid
-float trap_height = 0.4 ;// # height of the trapezoid expressed as percentage of image height
+float trap_top_width = 0.81;//0.07 ;// # ditto for top edge of trapezoid
+float trap_height = 0.5 ;// # height of the trapezoid expressed as percentage of image height
 
 //Hough Transform
 int rho = 2;// # distance resolution in pixels of the Hough grid
@@ -232,7 +232,7 @@ Mat region_of_interest(Mat& img, vector<Point>& vertices){
     npt[0]=vertices.size();
 
     fillPoly(mask, ppt, npt, 1, ignore_mask_color);
-    //    imshow("mask",mask);
+        imshow("mask",mask);
 
     //    returning the image only where mask pixels are nonzero
     Mat masked_image ;
@@ -247,16 +247,43 @@ Mat region_of_interest(Mat& img, vector<Point>& vertices){
 Mat filter_colors(Mat& src){
 
 
+    Vec3b target_color(12,168,255);
+    int min_dist=60;
+    colorDetect cdect;
+
+    int dilation_size = 3;
+    int dilation_type=MORPH_ELLIPSE;//MORPH_RECT,MORPH_CROSS,MORPH_ELLIPSE
+
+
     //        # Filter white pixels
     int white_threshold=200;
-    Scalar lower_white(white_threshold,white_threshold,white_threshold);
-    Scalar upper_white(255, 255, 255);
     Mat white_mask;
-    inRange(src,lower_white,upper_white,white_mask);
-    //    imshow("white_mask",white_mask);
+    Mat element;
+
+    //----method 1
+//    Scalar lower_white(white_threshold,white_threshold,white_threshold);
+//    Scalar upper_white(255, 255, 255);
+//    inRange(src,lower_white,upper_white,white_mask);
+//    //    imshow("white_mask",white_mask);
+
+
+    //----method 2 lab distance
+    cdect.SetTargetColor(235,251,255);
+    cdect.SetMinDistance(30);
     Mat white_image;
+    white_mask=cdect.process(src);
+
+    //膨胀
+    element = getStructuringElement( dilation_type,
+                                           Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                                           Point( dilation_size, dilation_size ) );
+      ///膨胀操作
+    dilate( white_mask, white_mask, element );
+
     bitwise_and(src,src,white_image,white_mask);
-    //    imshow("white_image",white_image);
+    imshow("white_mask",white_mask);
+
+
 
     //        # Filter yellow pixels
     Mat yellow_mask;
@@ -269,25 +296,30 @@ Mat filter_colors(Mat& src){
 
 
     //---method 2 use lab distance
-    Vec3b target_color(12,168,255);
-    int min_dist=60;
-    colorDetect cdect;
-    cdect.SetMinDistance(min_dist);
-    cdect.SetTargetColor(target_color);
+    cdect.SetMinDistance(30);
+    cdect.SetTargetColor(12,168,255);
     yellow_mask=cdect.process(src);
-    imshow("labcordect",yellow_mask);
+    //dilate
+    dilation_size = 3;
+    dilation_type=MORPH_ELLIPSE;//MORPH_RECT,MORPH_CROSS,MORPH_ELLIPSE
+    element = getStructuringElement( dilation_type,
+                                           Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                                           Point( dilation_size, dilation_size ) );
+      ///膨胀操作
+    dilate( yellow_mask, yellow_mask, element );
+    imshow("yellow_mask",yellow_mask);
 
 
     Mat yellow_image;
     bitwise_and(src,src,yellow_image,yellow_mask);
-    imshow("yellow_image",yellow_image);
+//    imshow("yellow_image",yellow_image);
 
 
 
     //    # Combine the two above images
     Mat combined_img;
     addWeighted(white_image,1.,yellow_image,1.,0,combined_img);
-    //    imshow("combined_img",combined_img);
+        imshow("combined_img",combined_img);
 
 
     return combined_img;
@@ -589,6 +621,7 @@ void detect_img(Mat& src){
     vertices.push_back(Point(width - width*(1 - trap_bottom_width) / 2,height));
 
     Mat masked_edges = region_of_interest(edges, vertices);
+
 
 
     //        # Run Hough on edge detected image
