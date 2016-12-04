@@ -44,9 +44,82 @@ int max_line_gap = 20	;//# maximum gap in pixels between connectable line segmen
 
 //for valid line slope
 float min_left_slope=10;
-float max_left_slope=60;
-float min_right_slope=45;
-float max_right_slope=60;
+float max_left_slope=80;
+float min_right_slope=15;
+float max_right_slope=80;
+
+
+
+class colorDetect{
+
+private:
+    int minDist;
+    Vec3b target;
+    Mat result;
+public:
+    void SetMinDistance(int dist);
+    void SetTargetColor(uchar blue, uchar green, uchar red);
+    void SetTargetColor(cv::Vec3b color);
+    cv::Mat process(const cv::Mat& image);
+};
+
+void colorDetect::SetMinDistance(int dist)
+{
+    this->minDist=dist;
+}
+
+void colorDetect::SetTargetColor(uchar blue, uchar green, uchar red)
+{
+    target[0]=blue;
+    target[1]=green;
+    target[2]=red;
+
+}
+
+void colorDetect::SetTargetColor(cv::Vec3b color)
+{
+    this->target=color;
+
+}
+
+cv::Mat colorDetect::process(const cv::Mat& image)
+{
+    cv::Mat ImageLab=image.clone();
+    result.create(image.rows,image.cols,CV_8U);
+
+    //将image转换为Lab格式存储在ImageLab中
+    cv::cvtColor(image,ImageLab,CV_BGR2Lab);
+    //将目标颜色由BGR转换为Lab
+    cv::Mat temp(1,1,CV_8UC3);
+    temp.at<cv::Vec3b>(0,0)=target;//创建了一张1*1的临时图像并用目标颜色填充
+    cvtColor(temp,temp,CV_BGR2Lab);
+    target=temp.at<cv::Vec3b>(0,0);//再从临时图像的Lab格式中取出目标颜色
+
+    // 创建处理用的迭代器
+    cv::Mat_<cv::Vec3b>::iterator it=ImageLab.begin<cv::Vec3b>();
+    cv::Mat_<cv::Vec3b>::iterator itend=ImageLab.end<cv::Vec3b>();
+    cv::Mat_<uchar>::iterator itout=result.begin<uchar>();
+    int cnt=0;
+    while(it!=itend)
+    {
+        //两个颜色值之间距离的计算
+        int dist=static_cast<int>(cv::norm<int,3>(cv::Vec3i((*it)[0]-target[0],
+                                  (*it)[1]-target[1],(*it)[2]-target[2])));
+        //        cout<<dist<<" ";
+        //        ++cnt;
+        //        if(cnt%image.rows==0){
+        //            cout<<endl;
+        //        }
+        if(dist<minDist)
+            (*itout)=255;
+        else
+            (*itout)=0;
+        it++;
+        itout++;
+    }
+    return result;
+}
+
 
 
 bool IsDir(std::string path)
@@ -159,7 +232,7 @@ Mat region_of_interest(Mat& img, vector<Point>& vertices){
     npt[0]=vertices.size();
 
     fillPoly(mask, ppt, npt, 1, ignore_mask_color);
-//    imshow("mask",mask);
+    //    imshow("mask",mask);
 
     //    returning the image only where mask pixels are nonzero
     Mat masked_image ;
@@ -186,16 +259,30 @@ Mat filter_colors(Mat& src){
     //    imshow("white_image",white_image);
 
     //        # Filter yellow pixels
-
-    Mat hsv;
-    cvtColor(src,hsv,COLOR_BGR2HSV);
-    Scalar lower_yellow(90,100,100);
-    Scalar upper_yellow(110,255,255);
     Mat yellow_mask;
-    inRange(hsv,lower_yellow,upper_yellow,yellow_mask);
+    //--method 1 use hsv
+//    Mat hsv;
+//    cvtColor(src,hsv,COLOR_BGR2HSV);
+//    Scalar lower_yellow(90,100,100);
+//    Scalar upper_yellow(110,255,255);
+//    inRange(hsv,lower_yellow,upper_yellow,yellow_mask);
+
+
+    //---method 2 use lab distance
+    Vec3b target_color(12,168,255);
+    int min_dist=60;
+    colorDetect cdect;
+    cdect.SetMinDistance(min_dist);
+    cdect.SetTargetColor(target_color);
+    yellow_mask=cdect.process(src);
+    imshow("labcordect",yellow_mask);
+
+
     Mat yellow_image;
     bitwise_and(src,src,yellow_image,yellow_mask);
-    //    imshow("yellow_image",yellow_image);
+    imshow("yellow_image",yellow_image);
+
+
 
     //    # Combine the two above images
     Mat combined_img;
@@ -245,7 +332,7 @@ void filter_lines_by_slope(vector<Vec4i> &input_lines,vector<Vec4i>& output_line
         }else{
             slope = atan((y2 - y1)*1.0 / (x2 - x1)) * 180.0/PI;
         }
-        cout<<"x1="<<x1<<",y1="<<y1<<",x2="<<x2<<",y2="<<y2<<",slope="<<slope<<endl;
+//        cout<<"x1="<<x1<<",y1="<<y1<<",x2="<<x2<<",y2="<<y2<<",slope="<<slope<<endl;
 
         if(slope<0 && abs(slope)>left_min_slope && abs(slope)<left_max_slope
                 && x1<=img_center_x && x2<=img_center_x
@@ -476,7 +563,7 @@ void detect_img(Mat& src){
     //    """ Given an image Numpy array, return the annotated image as a Numpy array """
     //        # Only keep white and yellow pixels in the image, all other pixels become black
     Mat image = filter_colors(src);
-//    Mat image=src.clone();
+    //    Mat image=src.clone();
 
     //        # Read in and grayscale the image
     Mat gray;
@@ -518,7 +605,7 @@ void detect_img(Mat& src){
     Mat line_image=Mat::zeros(src.rows,src.cols,src.type());
     std::cout<<"line_image.channel="<<line_image.channels()<<std::endl;
     draw_lines(line_image,valid_lines);
-//    imshow("lines",line_image);
+    //    imshow("lines",line_image);
 
 
     //        # Draw lane lines on the original image
@@ -533,7 +620,7 @@ void detect_img(Mat& src){
 
 int main(int argc,char* argv[]){
 
-    string input_file="/home/gumh/TrainData/KITTI/21/image_0/";
+    string input_file="/home/gumh/Videos/challenge";
     string output_file="";
 
 
@@ -549,8 +636,6 @@ int main(int argc,char* argv[]){
 
     for(string file:allfiles){
         Mat src=imread(file);
-//        imshow("src",src);
-
         Mat out;
         detect_img(src);
         int key=waitKey(0);
@@ -558,6 +643,25 @@ int main(int argc,char* argv[]){
             break;
         }
     }
+
+    //    string video_file="/home/gumh/qtcreator-workspace/lanedetectsrc/road_lane_line_detection/challenge.mp4";
+    //    VideoCapture vcap(video_file);
+    //    if(!vcap.isOpened()){
+    //        cerr<<"fail to open video file:"<<video_file<<endl;
+    //        return -1;
+    //    }
+
+    //    cv::Mat frame;
+    //    vcap >> frame;
+
+    //    /** 若视频读取完毕，跳出循环 */
+    //    while ( !frame.empty() )
+    //    {
+
+    //        vcap>>frame;
+    //    }
+
+
 
 }
 
