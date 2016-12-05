@@ -95,13 +95,7 @@ void test_floodfill(){
 int main(int argc, char* argv[])
 {
 
-    cv::Mat img=cv::imread("/home/gumh/tmp/owndata/img/195.jpg");
-
-//    img.resize(cv::Size(img.rows,img.cols));
-
-    cv::resize(img,img,cv::Size(480,360));
-
-    cv::imwrite("/home/gumh/195-480-360.png",img);
+    cv::Mat img=cv::imread("picture/9.png");
 
 //    Vec3b lane_color(193,195,194);//bgr
 //    Vec3b road_color(106,108,108);
@@ -109,8 +103,6 @@ int main(int argc, char* argv[])
 //    int min_dist=60;
 //    Vec3b target_color(lane_color);
 //    test_color_dist(img,target_color,min_dist);
-
-
 
 
     test_floodfill();

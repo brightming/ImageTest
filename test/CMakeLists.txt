@@ -5,6 +5,7 @@ message(STATUS "-----test srcs:${src_lists}")
 
 set(need_srcs "")
 list(APPEND need_srcs "test_lane_detect")
+#list(APPEND need_srcs "Source")
 
 
 set(CMAKE_BUILD_TYPE DEBUG)
