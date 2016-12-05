@@ -16,7 +16,7 @@ public:
     void SetMinDistance(int dist);
     void SetTargetColor(uchar blue,uchar green,uchar red);
     void SetTargetColor(cv::Vec3b color); //set the target color
-    cv::Mat process(const cv::Mat& image); //main process
+    cv::Mat process(const cv::Mat& image,cv::Mat* output); //main process
 };
 
 

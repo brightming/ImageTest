@@ -20,10 +20,14 @@ void colorDetect::SetTargetColor(cv::Vec3b color)
 
 }
 
-cv::Mat colorDetect::process(const cv::Mat& image)
+cv::Mat colorDetect::process(const cv::Mat& image,cv::Mat* output)
 {
     cv::Mat ImageLab=image.clone();
-    result.create(image.rows,image.cols,CV_8U);
+
+    if(output->empty()){
+        output->create(image.rows,image.cols,CV_8U);
+    }
+//    result.create(image.rows,image.cols,CV_8U);
 
     //将image转换为Lab格式存储在ImageLab中
     cv::cvtColor(image,ImageLab,CV_BGR2Lab);
@@ -36,7 +40,7 @@ cv::Mat colorDetect::process(const cv::Mat& image)
     // 创建处理用的迭代器
     cv::Mat_<cv::Vec3b>::iterator it=ImageLab.begin<cv::Vec3b>();
     cv::Mat_<cv::Vec3b>::iterator itend=ImageLab.end<cv::Vec3b>();
-    cv::Mat_<uchar>::iterator itout=result.begin<uchar>();
+    cv::Mat_<uchar>::iterator itout=output->begin<uchar>();
     int cnt=0;
     while(it!=itend)
     {
@@ -55,6 +59,6 @@ cv::Mat colorDetect::process(const cv::Mat& image)
         it++;
         itout++;
     }
-    return result;
+    return *output;
 }
 

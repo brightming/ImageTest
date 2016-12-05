@@ -1,7 +1,8 @@
 project(ImageTest)
 
-#add_subdirectory(common)
-#add_subdirectory(distance)
+add_subdirectory(common)
+add_subdirectory(lanedetect)
+add_subdirectory(distance)
 #add_subdirectory(basic)
 #add_subdirectory(showgrayval)
 #add_subdirectory(hist)
