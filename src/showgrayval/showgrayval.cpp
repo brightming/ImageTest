@@ -42,6 +42,7 @@ void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代�
    if (event == CV_EVENT_LBUTTONDOWN)//左键按下，读取初始坐标，并在图像上该点处划圆
    {
        org.copyTo(img);
+       org.copyTo(dst);
        org.copyTo(fill_pic);//将原始图片复制到img中
        sprintf(temp,"(%d,%d)",x,y);
        pre_pt = Point(x,y);
@@ -52,7 +53,7 @@ void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代�
 //       putText(fill_pic,temp,pre_pt,FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,0,0,255),1,8);//在窗口上显示坐标
        circle(img,pre_pt,2,Scalar(255,0,0,0),CV_FILLED,CV_AA,0);//划圆
 
-       //flood fill
+       //----------------flood fill----------------//
        mask.create(org.rows, org.cols, CV_8UC1);
        mask = morpho.getEdges(org);
        cvtColor(mask, mask, COLOR_BGR2GRAY);
@@ -61,17 +62,30 @@ void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代�
 
        int loDiff = 20, upDiff = 20;
        int newMaskVal = 255;
-       Scalar newVal = Scalar(255, 0, 0);
+       Scalar newVal = Scalar(255, 128, 88);
        Rect ccomp;
        int lo = loDiff;
        int up = upDiff;
        int flags = 8 + (newMaskVal << 8) + CV_FLOODFILL_FIXED_RANGE;
 
 
+       mask-=mask;
        floodFill(fill_pic, mask, pre_pt, newVal, &ccomp, Scalar(lo, lo, lo), Scalar(up, up, up), flags);
+       imshow("mask",mask);
 
        //显示同色渲染的情况
        imshow("fill",fill_pic);
+
+
+       //-------lab color distance--------------------//
+       cv::Vec3b target_color(col);
+       int min_dist=15;
+       colorDetect cdect;
+       cdect.SetMinDistance(min_dist);
+       cdect.SetTargetColor(target_color);
+       cv::Mat res=cdect.process(dst);
+       imshow("lab",res);
+
 
        //显示点击的位置
        imshow("img",img);
@@ -89,13 +103,13 @@ void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代�
  */
 int main(int argc,char* argv[]){
 
-    string pic_file="/home/gumh/TrainData/Camvid/Camseq01/0016E5_07959.png";
-    string pic_label="/home/gumh/TrainData/Camvid/Camseq01/0016E5_07959_L.png";
+    string pic_file="/home/gumh/tmp/owndata/img/193.jpg";
+//    string pic_label="/home/gumh/TrainData/Camvid/Camseq01/0016E5_07959_L.png";
 
     org = cv::imread(pic_file);
-    label_pic=cv::imread(pic_label,CV_LOAD_IMAGE_GRAYSCALE);
+//    label_pic=cv::imread(pic_label,CV_LOAD_IMAGE_GRAYSCALE);
 
-//    cv::resize(org,org,Size(label_pic.cols,label_pic.rows));
+    cv::resize(org,org,Size(org.cols/2,org.rows/2));
 
     std::cout<<"label_pic.channels="<<label_pic.channels()<<std::endl;
 
@@ -110,7 +124,7 @@ int main(int argc,char* argv[]){
     mask = morpho.getEdges(org);
     cvtColor(mask, mask, COLOR_BGR2GRAY);
     cv::resize(mask,mask,Size(org.cols+2,org.rows+2));
-    imshow("edge",mask);
+//    imshow("edge",mask);
     namedWindow("img");//定义一个img窗口
 //    namedWindow("label");//定义一个label窗口
     namedWindow("fill");//定义一个fill窗口
