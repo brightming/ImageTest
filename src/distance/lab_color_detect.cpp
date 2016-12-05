@@ -47,7 +47,7 @@ cv::Mat colorDetect::process(const cv::Mat& image,cv::Mat* output)
         //两个颜色值之间距离的计算
         int dist=static_cast<int>(cv::norm<int,3>(cv::Vec3i((*it)[0]-target[0],
                                   (*it)[1]-target[1],(*it)[2]-target[2])));
-//        cout<<dist<<" ";
+//        cout<<cnt<<" ";
 //        ++cnt;
 //        if(cnt%image.rows==0){
 //            cout<<endl;

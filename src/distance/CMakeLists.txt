@@ -3,7 +3,7 @@ project(distance)
 
 aux_source_directory(./ src_lists)
 add_library(${PROJECT_NAME} ${src_lists})
-list(APPEND MY_LINKER_LIBS ${PROJECT_NAME})
+list(INSERT MY_LINKER_LIBS 0 ${PROJECT_NAME})
 set(MY_LINKER_LIBS ${MY_LINKER_LIBS} PARENT_SCOPE)
 
 

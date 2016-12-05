@@ -5,7 +5,7 @@ message(STATUS "-----test srcs:${src_lists}")
 
 set(need_srcs "")
 list(APPEND need_srcs "test_lane_detect")
-#list(APPEND need_srcs "Source")
+list(APPEND need_srcs "test_nightlane_detect")
 
 message(STATUS "MY_LINKER_LIBS=${MY_LINKER_LIBS}")
 set(CMAKE_BUILD_TYPE DEBUG)

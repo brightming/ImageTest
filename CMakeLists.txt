@@ -10,7 +10,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 #opencv
 #set(OpenCV_DIR /home/gumh/OpenSource/opencv-3.1.0/build_with_contri)
-set(OpenCV_DIR /home/gumh/OpenSource/opencv-2.4.13/build)
+set(OpenCV_DIR /home/gumh/OpenSource/opencv-2.4.9/build)
 find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
