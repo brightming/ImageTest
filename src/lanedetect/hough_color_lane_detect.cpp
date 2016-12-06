@@ -14,8 +14,8 @@
 #include "str_common.h"
 #include "distance/lab_color_detect.h"
 #include "math/img_math.h"
+#include "lanedetect/lane_c.h"
 #include "lanedetect/hough_color_lane_detect.h"
-#include "lanedetect/hough_color_lane_detect_c.h"
 
 using namespace cv;
 using namespace std;
@@ -55,29 +55,6 @@ float max_right_slope=80;
 Scalar default_white_color(200,200,200);
 Scalar default_yellow_color(93,218,248);
 
-struct SegMent{
-    int min_line_len;
-    int max_gap_len;
-    int min_left_slope;
-    int max_left_slope;
-    int min_right_slope;
-    int max_right_slope;
-    Rect  range;
-    int y_offset;
-    int x_offset;
-
-    Scalar yellow_color;
-    Scalar white_color;
-
-    int white_lab_min_dist;
-    int yellow_lab_min_dist;
-
-    Mat white_mask;
-    Mat yellow_mask;
-
-    Mat pic;
-    Mat middle_pic;
-};
 
 #define DEBUG_SHOW
 void test_imshow(string name,Mat& pic){
@@ -85,6 +62,143 @@ void test_imshow(string name,Mat& pic){
     imshow(name,pic);
 #endif
 }
+
+/////----duhw----//
+//struct line_dist{
+//    double k;
+//    double b;
+//    cv::Vec2d upper_point;
+//    cv::Vec2d lower_point;
+//    cv::Vec2d center_point;
+//};
+
+///**
+// * @author du.hw
+// * @create 2016.11.25
+// * sort line by center's point x value asc
+// */
+
+//bool sortLineCenterX(line_dist a1,line_dist a2){
+//    return a1.center_point[0] < a2.center_point[0];//order by asc
+//}
+
+///**
+// * @author du.hw
+// * @create 2016.11.25
+// * filter line and compute final line
+// * input_lines:hough lines
+// * output_lines:final lines of child img
+// * child_width:child img's width
+// * child_height:child img's height
+// */
+//void filterLine(cv::vector<cv::Vec4i> input_lines,cv::vector<line_dist> *output_lines,int child_width,int child_height){
+//    if(input_lines.size() ==0 ){
+//        std::cout << "have no hough lines!" << std::endl;
+//        return;
+//    }
+//    //compute every hough line's k b and center point
+//    cv::vector<line_dist> lines_temp;
+//    for(int i=0;i<input_lines.size();i++){
+//        line_dist line;
+//        cv::Vec4i l = input_lines[i];
+//        //line: y = kx + b;
+//        double k = l[2] != l[0] ? (l[3] - l[1]) / (l[2] - l[0]) : 0;//line's k value
+//        double b = l[1] - k * l[0];//line's b value
+//        line.k = k;
+//        line.b = b;
+
+//        //left and upper of src image is coordinae origin,so min_y is upper and max_y is lower
+//        double upper_y = 0;
+//        double lower_y = child_height;
+//        double center_y = (double)child_height / 2;
+//        double upper_x = k != 0 ? (upper_y - b)/k : l[0];
+//        double lower_x = k != 0 ? (lower_y - b)/k : l[0];
+//        double center_x = (upper_x + lower_x)/2;
+
+
+//        line.upper_point[0] = upper_x;
+//        line.upper_point[1] = upper_y;
+//        line.center_point[0] = center_x;
+//        line.center_point[1] = center_y;
+//        line.lower_point[0] = lower_x;
+//        line.lower_point[1] = lower_y;
+
+//        lines_temp.push_back(line);
+//    }
+
+//    //order by center point's x asc
+//    std::sort(lines_temp.begin(),lines_temp.end(),sortLineCenterX);
+
+//   //start cluster from center point of line
+//    int distance = 30;//max distance of two adjacent points
+//    double upper_x_total = 0,upper_y_total = 0;
+//    double lower_x_total = 0,lower_y_total = 0;
+//    int cluster_number = 0;
+//    for(int i=0;i<lines_temp.size();i++){
+//        line_dist line = lines_temp[i];
+//        std::cout << "center:" << line.center_point[0] << "  " << line.center_point[1] << std::endl;
+//        if( cluster_number == 0  ||
+//            (i > 0 && (line.center_point[0] - lines_temp[i-1].center_point[0]) < distance) ){
+//            //center point is adjacent
+//            cluster_number++;
+//            upper_x_total += line.upper_point[0];
+//            upper_y_total += line.upper_point[1];
+//            lower_x_total += line.lower_point[0];
+//            lower_y_total += line.lower_point[1];
+//        }else if((line.center_point[0] - lines_temp[i-1].center_point[0]) >= distance){
+//            //adjacent distance must less max distance
+//              line_dist final_line;
+//              double upper_x_final = upper_x_total / cluster_number;
+//              double upper_y_final = upper_y_total / cluster_number;
+//              double lower_x_final = lower_x_total / cluster_number;
+//              double lower_y_final = lower_y_total / cluster_number;
+
+//              final_line.upper_point[0] = upper_x_final;
+//              final_line.upper_point[1] = upper_y_final;
+//              final_line.lower_point[0] = lower_x_final;
+//              final_line.lower_point[1] = lower_y_final;
+
+//              final_line.center_point[0] = (upper_x_final + lower_x_final)/2;
+//              final_line.center_point[1] = (upper_y_final + lower_y_final)/2;
+//              final_line.k = (upper_x_final != lower_x_final)?(upper_y_final - lower_y_final) / (upper_x_final - lower_x_final):0;
+//              final_line.b = upper_y_final - final_line.k * upper_x_final;
+//              output_lines->push_back(final_line);
+
+//                //recompute next
+//                cluster_number = 1;
+//                upper_x_total = line.upper_point[0];
+//                upper_y_total = line.upper_point[1];
+//                lower_x_total = line.lower_point[0];
+//                lower_y_total = line.lower_point[1];
+//        }
+//    }
+
+
+//   //compute final lines
+//    line_dist last_final_line;
+//    double last_upper_x_final = upper_x_total / cluster_number;
+//    double last_upper_y_final = upper_y_total / cluster_number;
+//    double last_lower_x_final = lower_x_total / cluster_number;
+//    double last_lower_y_final = lower_y_total / cluster_number;
+
+//    last_final_line.upper_point[0] = last_upper_x_final;
+//    last_final_line.upper_point[1] = last_upper_y_final;
+//    last_final_line.lower_point[0] = last_lower_x_final;
+//    last_final_line.lower_point[1] = last_lower_y_final;
+
+//    last_final_line.center_point[0] = (last_upper_x_final + last_lower_x_final)/2;
+//    last_final_line.center_point[1] = (last_upper_y_final + last_lower_y_final)/2;
+//    last_final_line.k = last_upper_x_final != last_lower_x_final ?
+//            (last_upper_y_final - last_lower_y_final) / (last_upper_x_final - last_lower_x_final):0;
+//    last_final_line.b = last_upper_y_final - last_final_line.k * last_upper_x_final;
+
+
+//    output_lines->push_back(last_final_line);
+
+
+
+//}
+
 
 Mat region_of_interest(Mat& img, vector<Point>& vertices){
 
@@ -222,8 +336,26 @@ Mat filter_colors(SegMent& segment){
 
     return segment.middle_pic;
 
+}
 
+void filter_colors(Mat& output_mask,Mat& output_image,vector<SegMent> seg_ms){
 
+    //对于每一段都进行颜色过滤
+    int seg_cnt=seg_ms.size();
+    for(int scn=0;scn<seg_cnt;scn++){
+        SegMent seg=seg_ms[scn];
+        filter_colors(seg);
+//        imshow("seg.pic",seg.pic);
+//        imshow("seg.white_mask",seg.white_mask);
+//        imshow("seg.yellow_mask",seg.yellow_mask);
+//        imshow("seg.middle_pic",seg.middle_pic);
+        Mat part=output_image(seg.range);
+        part+=seg.middle_pic;
+
+        part=output_mask(seg.range);
+        addWeighted(seg.white_mask,1.,seg.yellow_mask,1.,0,part);
+//        waitKey(0);
+    }
 }
 
 /**
@@ -546,21 +678,17 @@ int hough_color_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
     return lines->used;
 }
 
-std::vector<cv::Vec4i> hough_color_detect_img(cv::Mat& src,int draw_line){
 
+void get_segments(Mat& src,vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt){
 
     char name[64];
-    //分段进行检测
-    Mat combined_img=Mat::zeros(src.rows,src.cols,src.type());
-    int width=src.cols;
-    int height=src.rows;
-    vector<SegMent> seg_ms;
-    int absolute_trap_height=height*trap_height;
-    int seg_cnt=5;
+    int absolute_trap_height=valid_roi_height;
     int seg_height=absolute_trap_height/seg_cnt;
-    int start_y=height;
-    int start_x=width*(1-trap_bottom_width)/2;
-    int seg_width=width*trap_bottom_width;
+
+    int seg_width=valid_roi_width*trap_bottom_width;
+
+    std::cout<<"get_segments::src.height="<<src.rows<<",valid_roi_width="<<valid_roi_width<<",valid_roi_height="<<valid_roi_height<<
+               ",seg_cnt="<<seg_cnt<<",seg_height="<<seg_height<<",start_x="<<start_x<<",start_y="<<start_y<<std::endl;
     for(int scn=0;scn<seg_cnt;scn++){
         SegMent seg;
         seg.max_gap_len=max_line_gap;
@@ -580,27 +708,51 @@ std::vector<cv::Vec4i> hough_color_detect_img(cv::Mat& src,int draw_line){
 
 
         //draw separate line on img
-//        line(src,Point(0,seg.y_offset),Point(width,seg.y_offset),Scalar(0,0,255),1);
-//        sprintf(name,"seg:%d",scn);
-//        putText(src,name,Point(seg.x_offset,seg.y_offset),CV_FONT_HERSHEY_COMPLEX,0.5,Scalar(0,0,255),1);
+        line(src,Point(0,seg.y_offset),Point(seg_width,seg.y_offset),Scalar(0,0,255),1);
+        sprintf(name,"seg:%d,y_offset:%d",scn,seg.y_offset);
+        putText(src,name,Point(seg.x_offset,seg.y_offset),CV_FONT_HERSHEY_COMPLEX,0.5,Scalar(0,0,255),1);
 
     }
-    //    """ Given an image Numpy array, return the annotated image as a Numpy array """
-    //        # Only keep white and yellow pixels in the image, all other pixels become black
-    //对于每一段都进行颜色过滤
-    for(int scn=0;scn<seg_cnt;scn++){
-        SegMent seg=seg_ms[scn];
-        filter_colors(seg);
-//        imshow("seg.pic",seg.pic);
-//        imshow("seg.white_mask",seg.white_mask);
-//        imshow("seg.yellow_mask",seg.yellow_mask);
-//        imshow("seg.middle_pic",seg.middle_pic);
-        Mat part=combined_img(seg.range);
-        part+=seg.middle_pic;
-//        waitKey(0);
-    }
+
+    return ;
+}
+
+std::vector<cv::Vec4i> hough_color_detect_img(cv::Mat& src,int draw_line){
+
+
+    char name[64];
+    //分段进行检测
+    Mat combined_img=Mat::zeros(src.rows,src.cols,src.type());
+    Mat combined_mask=Mat::zeros(src.rows,src.cols,CV_8UC1);
+    int width=src.cols;
+    int height=src.rows;
+    vector<SegMent> seg_ms;
+    int absolute_trap_height=height*trap_height;
+    int seg_cnt=5;
+    int start_y=height;
+    int start_x=width*(1-trap_bottom_width)/2;
+
+    get_segments(src,seg_ms,width,absolute_trap_height,start_x,start_y,seg_cnt);
+
+//    //    """ Given an image Numpy array, return the annotated image as a Numpy array """
+//    //        # Only keep white and yellow pixels in the image, all other pixels become black
+//    //对于每一段都进行颜色过滤
+//    for(int scn=0;scn<seg_cnt;scn++){
+//        SegMent seg=seg_ms[scn];
+//        filter_colors(seg);
+////        imshow("seg.pic",seg.pic);
+////        imshow("seg.white_mask",seg.white_mask);
+////        imshow("seg.yellow_mask",seg.yellow_mask);
+////        imshow("seg.middle_pic",seg.middle_pic);
+//        Mat part=combined_img(seg.range);
+//        part+=seg.middle_pic;
+////        waitKey(0);
+//    }
+
+    filter_colors(combined_mask,combined_img,seg_ms);
 
     test_imshow("combined_img",combined_img);
+    test_imshow("combined_msk",combined_mask);
 
     //        # Read in and grayscale the image
     Mat gray;

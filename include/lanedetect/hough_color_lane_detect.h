@@ -4,9 +4,41 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+#include "lanedetect/lane_c.h"
+
 extern "C"{
 
 std::vector<cv::Vec4i> hough_color_detect_img(cv::Mat& src,int draw_lines=0);
 
 }
+
+
+typedef struct SegMent{
+    int min_line_len;
+    int max_gap_len;
+    int min_left_slope;
+    int max_left_slope;
+    int min_right_slope;
+    int max_right_slope;
+    cv::Rect  range;
+    int y_offset;
+    int x_offset;
+
+    cv::Scalar yellow_color;
+    cv::Scalar white_color;
+
+    int white_lab_min_dist;
+    int yellow_lab_min_dist;
+
+    cv::Mat white_mask;
+    cv::Mat yellow_mask;
+
+    cv::Mat pic;
+    cv::Mat middle_pic;
+    cv::Mat all_mask; //white_mask | yellow_mask
+}SegMent;
+
+void filter_colors(cv::Mat& output_mask,cv::Mat& output_image,std::vector<SegMent> seg_ms);
+void get_segments(cv::Mat& src,std::vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt=5);
+
 #endif //__HOUGH_COLOR_LANE_DETECT__

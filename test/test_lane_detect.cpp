@@ -656,7 +656,7 @@ using namespace std;
 using namespace cv;
 int main(int argc,char* argv[]){
 
-    string input_file="/home/gumh/tmp/challenge";
+    string input_file="/home/gumh/Videos/challenge";
     string output_file="";
 
 
@@ -673,8 +673,9 @@ int main(int argc,char* argv[]){
     for(string file:allfiles){
         Mat src=imread(file);
         Mat out;
-        hough_color_detect_img(src);
-        int key=waitKey(0);
+        hough_color_detect_img(src,1);
+        imshow("src",src);
+        int key=waitKey(33);
         if(key==27){
             break;
         }
