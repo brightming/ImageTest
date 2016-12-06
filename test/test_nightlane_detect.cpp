@@ -37,7 +37,7 @@ int main()
 //    makeFromVid("/home/gumh/qtcreator-workspace/lanedetectsrc/Vehicle-Lane-Detection/sample/wandaor.mov");
     // makeFromVid("/home/yash/opencv-2.4.10/programs/road.m4v");
 //    makeFromVid("/home/gumh/Videos/hi3519sn10_20161201-151922-114.mp4");
-    makeFromFolder("/home/gumh/tmp/highway");
+    makeFromFolder("/home/gumh/Videos/hw2/");
 
 
 //    vec4i_c lines;
