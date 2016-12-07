@@ -3,14 +3,14 @@
 aux_source_directory(./ src_lists)
 message(STATUS "-----test srcs:${src_lists}")
 
-set(need_srcs "test_polyfit")
+set(need_srcs "test_polyfit;test_edge")
 list(APPEND need_srcs "test_lane_detect")
 list(APPEND need_srcs "test_nightlane_detect")
 list(APPEND need_srcs "test_CubicSplineInterpolation")
 
 
 
-message(STATUS "MY_LINKER_LIBS=${MY_LINKER_LIBS}")
+message(STATUS "need_srcs=${need_srcs}")
 set(CMAKE_BUILD_TYPE DEBUG)
 foreach(source_file  ${src_lists})
 
