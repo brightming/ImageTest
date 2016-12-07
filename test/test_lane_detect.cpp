@@ -656,47 +656,54 @@ using namespace std;
 using namespace cv;
 int main(int argc,char* argv[]){
 
-    string input_file="/home/gumh/Videos/challenge";
-    string output_file="";
+//    string input_file="/home/gumh/Videos/challenge";
+//    string output_file="";
 
 
 
-    vector<std::string> allfiles;
-    if(IsDir(input_file)){
-        allfiles=getAllFilesWithPathFromDir(input_file);
-        std::sort(allfiles.begin(),allfiles.end(),std::less<string>());
-    }else{
-        allfiles.push_back(input_file);
-    }
+//    vector<std::string> allfiles;
+//    if(IsDir(input_file)){
+//        allfiles=getAllFilesWithPathFromDir(input_file);
+//        std::sort(allfiles.begin(),allfiles.end(),std::less<string>());
+//    }else{
+//        allfiles.push_back(input_file);
+//    }
 
 
-    for(string file:allfiles){
-        Mat src=imread(file);
-        Mat out;
-        hough_color_detect_img(src,1);
-        imshow("src",src);
-        int key=waitKey(33);
-        if(key==27){
-            break;
+//    for(string file:allfiles){
+//        Mat src=imread(file);
+//        Mat out;
+//        hough_color_detect_img(src,1);
+//        imshow("src",src);
+//        int key=waitKey(33);
+//        if(key==27){
+//            break;
+//        }
+//    }
+
+        string video_file="/home/gumh/Videos/morning.HW.2.mp4";
+        VideoCapture vcap(video_file);
+        if(!vcap.isOpened()){
+            cerr<<"fail to open video file:"<<video_file<<endl;
+            return -1;
         }
-    }
 
-    //    string video_file="/home/gumh/qtcreator-workspace/lanedetectsrc/road_lane_line_detection/challenge.mp4";
-    //    VideoCapture vcap(video_file);
-    //    if(!vcap.isOpened()){
-    //        cerr<<"fail to open video file:"<<video_file<<endl;
-    //        return -1;
-    //    }
+        cv::Mat frame;
+        vcap >> frame;
 
-    //    cv::Mat frame;
-    //    vcap >> frame;
+        /** 若视频读取完毕，跳出循环 */
+        while ( !frame.empty() )
+        {
 
-    //    /** 若视频读取完毕，跳出循环 */
-    //    while ( !frame.empty() )
-    //    {
+            vcap>>frame;
 
-    //        vcap>>frame;
-    //    }
+            hough_color_detect_img(frame,1);
+            imshow("src",frame);
+            int key=waitKey(33);
+            if(key==27){
+                break;
+            }
+        }
 
 
 

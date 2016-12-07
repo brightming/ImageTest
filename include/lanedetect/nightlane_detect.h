@@ -11,6 +11,7 @@
 #include "distance/lab_color_detect.h"
 
 #include "lanedetect/lane_c.h"
+#include "math/img_math.h"
 
 using namespace cv;
 using namespace std;
@@ -26,6 +27,7 @@ public:
     Mat currFrame; //stores the upcoming frame
     Mat temp;      //stores intermediate results
     Mat temp2;     //stores the final lane segments
+    Mat ori_pic;   //stores the original pics,can be resized to specified size ,but no more other action
 
     Mat for_draw;
 
@@ -55,13 +57,23 @@ public:
     vector<Vec4i> hierarchy;
     RotatedRect rotated_rect;
 
+    //----//
+    vector<RotatedRect> left_rects;
+    vector<RotatedRect> right_rects;
 
-	//--add for color judge--//
-	colorDetect color_detect;
-	Mat white_mask;
-	Mat yellow_mask;
-	Rect roi_rect;
+
+    //--add for color judge--//
+    colorDetect color_detect;
+    Mat white_mask;
+    Mat yellow_mask;
+    Rect roi_rect;
     NightLaneDetect(Mat startFrame);
+
+
+    //---曲线拟合的函数
+    //如果当前frame没有检测到左右的线，考虑用前frame的进行拟合
+    LeastSquare left_last_lsq;
+    LeastSquare right_last_lsq;
 
 
     void updateSensitivity();
@@ -84,6 +96,8 @@ public:
     Rect GetRoiRect(){
 	return roi_rect;
     }
+
+    void FitLaneLine();
 
 
 

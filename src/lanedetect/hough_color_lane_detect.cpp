@@ -276,7 +276,8 @@ Mat filter_colors(SegMent& segment){
                                            Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                            Point( dilation_size, dilation_size ) );
       ///膨胀操作
-    dilate( segment.white_mask, segment.white_mask, element );
+//    dilate( segment.white_mask, segment.white_mask, element );
+    erode( segment.white_mask, segment.white_mask, element );
 
     bitwise_and(segment.pic,segment.pic,white_image,segment.white_mask);
 //    imshow("white_mask",segment.white_mask);
@@ -306,7 +307,8 @@ Mat filter_colors(SegMent& segment){
                                            Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                            Point( dilation_size, dilation_size ) );
       ///膨胀操作
-    dilate( segment.yellow_mask, segment.yellow_mask, element );
+//    dilate( segment.yellow_mask, segment.yellow_mask, element );
+    erode(segment.yellow_mask, segment.yellow_mask, element);
 //    imshow("yellow_mask",segment.yellow_mask);
 
 
@@ -687,8 +689,8 @@ void get_segments(Mat& src,vector<SegMent> &seg_ms,int valid_roi_width,int valid
 
     int seg_width=valid_roi_width*trap_bottom_width;
 
-    std::cout<<"get_segments::src.height="<<src.rows<<",valid_roi_width="<<valid_roi_width<<",valid_roi_height="<<valid_roi_height<<
-               ",seg_cnt="<<seg_cnt<<",seg_height="<<seg_height<<",start_x="<<start_x<<",start_y="<<start_y<<std::endl;
+//    std::cout<<"get_segments::src.height="<<src.rows<<",valid_roi_width="<<valid_roi_width<<",valid_roi_height="<<valid_roi_height<<
+//               ",seg_cnt="<<seg_cnt<<",seg_height="<<seg_height<<",start_x="<<start_x<<",start_y="<<start_y<<std::endl;
     for(int scn=0;scn<seg_cnt;scn++){
         SegMent seg;
         seg.max_gap_len=max_line_gap;

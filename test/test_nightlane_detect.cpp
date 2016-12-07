@@ -34,10 +34,12 @@ int main()
 //    return -0;
 
 
+    string file="";
 //    makeFromVid("/home/gumh/qtcreator-workspace/lanedetectsrc/Vehicle-Lane-Detection/sample/wandaor.mov");
     // makeFromVid("/home/yash/opencv-2.4.10/programs/road.m4v");
-//    makeFromVid("/home/gumh/Videos/hi3519sn10_20161201-151922-114.mp4");
-    makeFromFolder("/home/gumh/Videos/hw2/");
+    makeFromVid("/home/gumh/Videos/morning.HW.2.mp4");
+    makeFromVid("/home/gumh/Videos/morning.HW.2.mp4");
+//    makeFromFolder("/home/gumh/Videos/hw2/");
 
 
 //    vec4i_c lines;
