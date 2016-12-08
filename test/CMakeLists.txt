@@ -3,7 +3,7 @@
 aux_source_directory(./ src_lists)
 message(STATUS "-----test srcs:${src_lists}")
 
-set(need_srcs "test_polyfit;test_edge")
+set(need_srcs "test_polyfit;test_edge;test_math")
 list(APPEND need_srcs "test_lane_detect")
 list(APPEND need_srcs "test_nightlane_detect")
 list(APPEND need_srcs "test_CubicSplineInterpolation")

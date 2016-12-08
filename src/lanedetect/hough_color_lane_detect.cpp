@@ -346,6 +346,7 @@ void filter_colors(Mat& output_mask,Mat& output_image,vector<SegMent> seg_ms){
     int seg_cnt=seg_ms.size();
     for(int scn=0;scn<seg_cnt;scn++){
         SegMent seg=seg_ms[scn];
+//        std::cout<<"seg.pic.empty="<<seg.pic.empty()<<std::endl;
         filter_colors(seg);
 //        imshow("seg.pic",seg.pic);
 //        imshow("seg.white_mask",seg.white_mask);
@@ -681,40 +682,87 @@ int hough_color_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
 }
 
 
-void get_segments(Mat& src,vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt){
 
-    char name[64];
+void initial_segments(std::vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt,float height_ratio){
     int absolute_trap_height=valid_roi_height;
     int seg_height=absolute_trap_height/seg_cnt;
 
     int seg_width=valid_roi_width*trap_bottom_width;
 
+    float base_height;
+    if(height_ratio!=1){
+        base_height=absolute_trap_height*1.*(1-height_ratio)/(1-pow(height_ratio,seg_cnt));
+    }else{
+        base_height=seg_height;
+    }
+
 //    std::cout<<"get_segments::src.height="<<src.rows<<",valid_roi_width="<<valid_roi_width<<",valid_roi_height="<<valid_roi_height<<
 //               ",seg_cnt="<<seg_cnt<<",seg_height="<<seg_height<<",start_x="<<start_x<<",start_y="<<start_y<<std::endl;
+    int total_h=0;
+    //自图像底部向上分起，底部第一个为编号0
     for(int scn=0;scn<seg_cnt;scn++){
         SegMent seg;
         seg.max_gap_len=max_line_gap;
         seg.min_line_len=min_line_length*(1-scn*0.1);
-        seg.y_offset=start_y-(scn+1)*seg_height;
+
         seg.x_offset=start_x;
+        if(height_ratio==1){
+            seg_height=base_height;
+        }else{
+            seg_height=base_height*pow(height_ratio,seg_cnt-1-scn);
+
+        }
+        total_h+=seg_height;
+        if(scn==seg_cnt-1){
+            seg_height+=(absolute_trap_height-total_h);//由于浮点运算关系，如果不够，则在最后一段补充足
+//            cout<<"last segment ,h is modified to : "<<seg_height<<endl;
+            total_h=absolute_trap_height;
+        }
+
+        seg.y_offset=start_y-total_h;
+
+//        std::cout<<",scn="<<scn<<",height_ratio="<<height_ratio<<",absolute_trap_height="<<absolute_trap_height<<",total_h="<<total_h
+//                <<",seg_height="<<seg_height
+//               <<",seg.y_offset="<<seg.y_offset
+//              <<",src.height="<<src.rows
+//               <<std::endl;
+
+
         seg.range=Rect(seg.x_offset,seg.y_offset,seg_width,seg_height);
-        seg.pic=src(seg.range);
 
         seg.white_lab_min_dist=scn==0?30:pow(1.05,scn)*30;
         seg.yellow_lab_min_dist=scn==0?30:pow(1.05,scn)*30;
         seg.white_color=default_white_color;//Scalar(191,197,203);
         seg.yellow_color=default_yellow_color;//Scalar(93,218,248);
 
-
         seg_ms.push_back(seg);
 
+    }
+}
+
+void fill_segment_mat(cv::Mat& src,std::vector<SegMent> &seg_ms){
+
+    char name[64];
+    for(int scn=0;scn<seg_ms.size();scn++){
+
+        seg_ms[scn].pic=src(seg_ms[scn].range).clone();
 
         //draw separate line on img
-        line(src,Point(0,seg.y_offset),Point(seg_width,seg.y_offset),Scalar(0,0,255),1);
-        sprintf(name,"seg:%d,y_offset:%d",scn,seg.y_offset);
+         SegMent seg=seg_ms[scn];
+        line(src,Point(0,seg.y_offset),Point(seg.range.width,seg.y_offset),Scalar(0,scn*10,255),1);
+        sprintf(name,"seg:%d,y_offset:%d，seg_height:%d",scn,seg.y_offset,seg.range.height);
         putText(src,name,Point(seg.x_offset,seg.y_offset),CV_FONT_HERSHEY_COMPLEX,0.5,Scalar(0,0,255),1);
-
     }
+
+}
+
+
+
+void get_segments(Mat& src,vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt,float height_ratio){
+
+    initial_segments(seg_ms,valid_roi_width,valid_roi_height,start_x,start_y,seg_cnt,height_ratio);
+
+    fill_segment_mat(src,seg_ms);
 
     return ;
 }

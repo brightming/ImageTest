@@ -39,6 +39,14 @@ typedef struct SegMent{
 }SegMent;
 
 void filter_colors(cv::Mat& output_mask,cv::Mat& output_image,std::vector<SegMent> seg_ms);
-void get_segments(cv::Mat& src,std::vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt=5);
+void get_segments(cv::Mat& src,std::vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt=5,float height_ratio=1.15);
+
+void initial_segments(std::vector<SegMent> &seg_ms,int valid_roi_width,int valid_roi_height,int start_x,int start_y,int seg_cnt=5,float height_ratio=1.15);
+
+void fill_segment_mat(cv::Mat& src,std::vector<SegMent> &seg_ms);
+
+
+
+
 
 #endif //__HOUGH_COLOR_LANE_DETECT__

@@ -67,6 +67,73 @@ Mat test_laplacian(Mat& src){
     imshow("LaplacianGaussian", dst2);
 }
 
+
+Mat do_clahe(Mat& bgr_image){
+    // READ RGB color image and convert it to Lab
+    cv::Mat lab_image;
+    cv::cvtColor(bgr_image, lab_image, CV_BGR2Lab);
+
+    // Extract the L channel
+    std::vector<cv::Mat> lab_planes(3);
+    cv::split(lab_image, lab_planes);  // now we have the L image in lab_planes[0]
+
+    // apply the CLAHE algorithm to the L channel
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(4);
+    cv::Mat dst;
+    clahe->apply(lab_planes[0], dst);
+
+    // Merge the the color planes back into an Lab image
+    dst.copyTo(lab_planes[0]);
+    cv::merge(lab_planes, lab_image);
+
+    // convert back to RGB
+    cv::Mat image_clahe;
+    cv::cvtColor(lab_image, image_clahe, CV_Lab2BGR);
+
+    // display the results  (you might also want to see lab_planes[0] before and after).
+    //       cv::imshow("image original", bgr_image);
+    //    cv::imshow("resImg2", image_clahe);
+    //           cv::waitKey();
+    return image_clahe;
+}
+
+Mat test_equalize(Mat& src){
+    if(src.channels() >= 3)
+    {
+        Mat ycrcb;
+        cvtColor(src,ycrcb,CV_BGR2YCrCb);
+
+        vector<Mat> channels;
+        split(ycrcb,channels);
+
+        equalizeHist(channels[0], channels[0]);
+
+        Mat result;
+        merge(channels,ycrcb);
+        cvtColor(ycrcb,result,CV_YCrCb2BGR);
+
+        imshow("resImg",result);
+
+        //methos 2
+        Mat res;
+        cvtColor(src,res,CV_BGR2GRAY);
+        equalizeHist(res,res);
+
+        //        imshow("resImg2",res);
+
+        //method 3
+        Mat res2=do_clahe(src);
+        imshow("resImg2",res2);
+
+        return result;
+    }
+    return src.clone();
+
+
+
+}
+
 Mat test_edge(Mat& img){
 
     float top_width_ratio=1;
@@ -95,10 +162,10 @@ Mat test_edge(Mat& img){
 
     //        Apply Canny Edge Detector
     Mat edges;
-//    upperthresh=OTSU(blur_gray)
+    //    upperthresh=OTSU(blur_gray)
     Mat img_bw;
-//    high_threshold=(int)threshold(blur_gray, img_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-//    low_threshold=0.5*high_threshold;
+    //    high_threshold=(int)threshold(blur_gray, img_bw, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+    //    low_threshold=0.5*high_threshold;
     std::cout<<"high_threshold="<<high_threshold<<",low_threshold="<<low_threshold<<std::endl;
     cv::Canny(blur_gray,edges,low_threshold,high_threshold);
 
@@ -250,6 +317,7 @@ int main(int argc,char* argv[]){
 
     namedWindow("img",2);
     namedWindow("resImg",2);
+    namedWindow("resImg2",2);
 
     vector<string> all_pics;
     if(IsDir(file)){
@@ -270,9 +338,10 @@ int main(int argc,char* argv[]){
         imshow("img",img);
 
 
-        test_edge(img);
+        //        test_edge(img);
+        test_equalize(img);
 
-        int key=waitKey(0);
+        int key=waitKey(30);
         if(key==27 || (char)key=='q'){
             break;
         }

@@ -12,6 +12,7 @@
 
 #include "lanedetect/lane_c.h"
 #include "math/img_math.h"
+#include "lanedetect/hough_color_lane_detect.h"
 
 using namespace cv;
 using namespace std;
@@ -61,13 +62,15 @@ public:
     vector<RotatedRect> left_rects;
     vector<RotatedRect> right_rects;
 
+    vector<SegMent> seg_ms;//roi分段的信息
+
 
     //--add for color judge--//
     colorDetect color_detect;
     Mat white_mask;
     Mat yellow_mask;
     Rect roi_rect;
-    NightLaneDetect(Mat startFrame);
+    NightLaneDetect(Mat startFrame,float roi_hight_ratio=0.5);
 
 
     //---曲线拟合的函数
@@ -98,6 +101,8 @@ public:
     }
 
     void FitLaneLine();
+
+    bool isValidContour(vector<vector<Point> >& contours,int index);
 
 
 

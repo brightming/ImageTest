@@ -8,6 +8,9 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -std=c++11")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
+
+set(CMAKE_BUILD_TYPE "DEBUG")
+
 #opencv
 #set(OpenCV_DIR /home/gumh/OpenSource/opencv-3.1.0/build_with_contri)
 set(OpenCV_DIR /home/gumh/OpenSource/opencv-2.4.13/build)
