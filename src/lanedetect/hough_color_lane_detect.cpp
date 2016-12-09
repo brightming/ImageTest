@@ -700,6 +700,7 @@ void initial_segments(std::vector<SegMent> &seg_ms,int valid_roi_width,int valid
 //               ",seg_cnt="<<seg_cnt<<",seg_height="<<seg_height<<",start_x="<<start_x<<",start_y="<<start_y<<std::endl;
     int total_h=0;
     //自图像底部向上分起，底部第一个为编号0
+    float base_color_dist=15;
     for(int scn=0;scn<seg_cnt;scn++){
         SegMent seg;
         seg.max_gap_len=max_line_gap;
@@ -730,10 +731,13 @@ void initial_segments(std::vector<SegMent> &seg_ms,int valid_roi_width,int valid
 
         seg.range=Rect(seg.x_offset,seg.y_offset,seg_width,seg_height);
 
-        seg.white_lab_min_dist=scn==0?30:pow(1.05,scn)*30;
-        seg.yellow_lab_min_dist=scn==0?30:pow(1.05,scn)*30;
+
+        seg.white_lab_min_dist=scn==0?base_color_dist:pow(1.05,scn)*base_color_dist;
+        seg.yellow_lab_min_dist=scn==0?base_color_dist:pow(1.05,scn)*base_color_dist;
         seg.white_color=default_white_color;//Scalar(191,197,203);
         seg.yellow_color=default_yellow_color;//Scalar(93,218,248);
+
+        seg.seg_area=seg_width*seg_height;
 
         seg_ms.push_back(seg);
 

@@ -102,10 +102,10 @@ NightLaneDetect::NightLaneDetect(Mat startFrame,float roi_hight_ratio)
     //    std::cout<<"valid_roi_height="<<valid_roi_height<<",start_y="<<start_y<<",vanishingPt.y="<<vanishingPt<<std::endl;
     int seg_cnt=5;
     initial_segments(seg_ms,valid_roi_width,valid_roi_height,start_x,start_y,seg_cnt);
-    float bottom_left_min_slope=35;
+    float bottom_left_min_slope=20;
     float bottom_left_max_slope=60;
 
-    float bottom_right_min_slope=35;
+    float bottom_right_min_slope=20;
     float bottom_right_max_slope=60;
     for(int i=0;i<seg_cnt;i++){
         seg_ms[i].min_left_slope=bottom_left_min_slope;
@@ -151,7 +151,8 @@ void NightLaneDetect::getLane()
         }
 
     //    imshow("currframe", currFrame);
-    blobRemoval();
+    blobRemoval();  //use OptimizeFilter instead
+//    OptimizeFilter();
 }
 
 void NightLaneDetect::markLane()
@@ -236,7 +237,7 @@ void NightLaneDetect::markLane()
                                      Point( dilation_size, dilation_size ) );
     ///膨胀操作
     Mat before=temp.clone();
-    imshow("bef",before);
+//    imshow("bef",before);
     erode( temp, temp, element );
 
 
@@ -257,6 +258,157 @@ void NightLaneDetect::markLane()
 
 
 
+void NightLaneDetect::OptimizePolyfit(){
+//    std::cout<<">>>>>>OptimizePolyfit"<<std::endl;
+    char name[64];
+    //简单策略
+    //从x中心，向上搜素，每一行，都搜左边3个点，搜右边3个点
+
+
+    vector<Point> left_ps;
+    vector<Point> right_ps;
+    vector<int> tmp_x;
+    int tmp_t_x;
+    int step_y=roi_rect.height/20;
+    int idx=0;
+    for(int r=temp2.rows-1;r>roi_rect.tl().y;r-=step_y){
+        //搜左边
+        tmp_x.resize(0);
+        tmp_t_x=0;
+        for(int c=temp2.cols/2;c>=0;c-=5){
+            if(temp2.at<uchar>(r,c)==255){
+                tmp_x.push_back(c);
+                tmp_t_x+=c;
+            }
+        }
+
+        if(tmp_x.size()>0){
+            left_ps.push_back(Point(tmp_t_x/tmp_x.size(),r));
+            circle(for_draw,Point(tmp_t_x/tmp_x.size(),r),3,Scalar(255,255,0),2);
+//            std::cout<<"left_p="<<Point(tmp_t_x/tmp_x.size(),r)<<std::endl;
+//            sprintf(name,"%d",idx++);
+//            putText(for_draw,name,Point(tmp_t_x/tmp_x.size()+100,r),CV_FONT_HERSHEY_COMPLEX,0.5,1);
+        }
+
+
+        //搜右边
+        tmp_x.resize(0);
+        tmp_t_x=0;
+        for(int c=temp2.cols/2;c<temp2.cols;c+=5){
+            if(temp2.at<uchar>(r,c)==255){
+                tmp_x.push_back(c);
+                tmp_t_x+=c;
+            }
+        }
+
+        if(tmp_x.size()>0){
+            right_ps.push_back(Point(tmp_t_x/tmp_x.size(),r));
+            circle(for_draw,Point(tmp_t_x/tmp_x.size(),r),3,Scalar(255,255,0),2);
+
+        }
+    }
+
+    //函数拟合
+
+    int order=2;
+
+    //----------left------------------//
+    if(left_ps.size()<=2){
+        order=1;
+    }
+    std::cout<<"left_ps.size=="<<left_ps.size()<<std::endl;
+    std::cout<<"right_ps.size=="<<right_ps.size()<<std::endl;
+    if(left_ps.size()>0){
+        Mat left_dst=Mat::zeros(order+1,1,CV_32FC1);
+
+
+        Mat left_input_x(left_ps.size(),1,CV_32FC1);
+        Mat left_input_y(left_ps.size(),1,CV_32FC1);
+
+
+
+        for(int i=0;i<left_ps.size();i++){
+            left_input_x.at<float>(i,0)=left_ps[i].x;
+            left_input_y.at<float>(i,0)=left_ps[i].y;
+        }
+
+        polyfit(left_input_x,left_input_y,left_dst,order);
+        vector<Point> dst_left_ps;
+        for(int r=0;r<for_draw.cols/2;r+=10){
+            float y=0;
+            for(int j=0;j<=order;j++){
+                y+=left_dst.at<float>(0,j)*pow(r,j);
+            }
+            if(y>=roi_rect.y && y<for_draw.rows){
+                dst_left_ps.push_back(Point(r,y));
+//                circle(for_draw,Point(r,y),3,Scalar(255,248,220),2);
+//                std::cout<<"get pt:"<<Point(r,y)<<endl;
+            }
+
+        }
+        for(int i=1;i<dst_left_ps.size()-1;i++){
+            line(for_draw,dst_left_ps[i],dst_left_ps[i+1],Scalar(255,144,30),2);
+//            std::cout<<"from pt:"<<dst_left_ps[i]<<" to pt : "<<dst_left_ps[i+1]<<std::endl;
+        }
+    }
+
+
+
+//    return;
+    //-----------right------------//
+    if(right_ps.size()>0){
+        Mat right_dst=Mat::zeros(order+1,1,CV_32FC1);
+        Mat right_input_x(right_ps.size(),1,CV_32FC1);
+        Mat right_input_y(right_ps.size(),1,CV_32FC1);
+
+        for(int i=0;i<right_ps.size();i++){
+            right_input_x.at<float>(i,0)=right_ps[i].x;
+            right_input_y.at<float>(i,0)=right_ps[i].y;
+        }
+
+        polyfit(right_input_x,right_input_y,right_dst,order);
+        vector<Point> dst_right_ps;
+        for(int r=for_draw.cols/2;r<for_draw.cols;r+=10){
+            float y=0;
+            for(int j=0;j<=order;j++){
+                y+=right_dst.at<float>(0,j)*pow(r,j);
+            }
+            if(y>=roi_rect.y && y<for_draw.rows){
+                dst_right_ps.push_back(Point(r,y));
+            }
+
+        }
+        for(int i=1;i<dst_right_ps.size()-1;i++){
+            line(for_draw,dst_right_ps[i],dst_right_ps[i+1],Scalar(60,179,113),2);
+        }
+    }
+
+}
+
+void NightLaneDetect::OptimizeFilter(){
+    markLane();
+
+    // find all contours in the binary image
+    temp.copyTo(binary_image);
+    findContours(binary_image, contours,
+                 hierarchy, CV_RETR_CCOMP,
+                 CV_CHAIN_APPROX_SIMPLE);
+
+    left_rects.clear();
+    right_rects.clear();
+
+
+
+    if(contours.size()>0){
+        for(int i=0;i<contours.size();i++){
+            isValidContour(contours,i);
+        }
+
+
+        OptimizePolyfit();
+    }
+
+}
 
 
 /**
@@ -280,7 +432,7 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
     //====conditions for removing contours====//
 
     contour_area = contourArea(contours[index]) ;
-    float area_ratio=contour_area*1.0/(for_draw.rows*for_draw.cols)*100;
+//    float area_ratio=contour_area*1.0/(for_draw.rows*for_draw.cols)*100;
 
 
 //    if(contour_area>30){
@@ -307,7 +459,8 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
         //端点
         Point2f rect_points[4];
         rotated_rect.points( rect_points );
-        //通过判断各端点的y值，定位其在哪个segment中
+
+
 
 
 
@@ -323,43 +476,91 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
         //判断该contour在哪个区域
         set<int> area_seq;
         vector<int> area_seq_vec;
+        float ref_seg_total_area;//横跨的segment的总面积
+        float ref_seg_total_height;//
+        int min_x=this->currFrame.cols,max_x=-1;
+        int min_y=this->currFrame.rows,max_y=-1;
         for(int i=0;i<seg_ms.size();i++){
             for(int j=0;j<4;j++){//4 points
                 if(seg_ms[i].range.contains(rect_points[j])){
                     if(area_seq.find(i)== area_seq.end()){
                         area_seq.insert(i);
                         area_seq_vec.push_back(i);
+
+                        ref_seg_total_area+=seg_ms[i].seg_area;
+                        ref_seg_total_height+=seg_ms[i].range.height;
                     }
                 }
+                if(rect_points[j].x>max_x){
+                    max_x=rect_points[j].x;
+                }
+                if(rect_points[j].x<min_x){
+                    min_x=rect_points[j].x;
+                }
+                if(rect_points[j].y>max_y){
+                    max_y=rect_points[j].y;
+                }
+                if(rect_points[j].y<min_y){
+                    min_y=rect_points[j].y;
+                }
             }
-            std::cout<<"i="<<i
-                    <<",min_left_slope="<<seg_ms[i].min_left_slope
-                   <<",max_left_slope="<<seg_ms[i].max_left_slope
-                  <<",min_right_slope="<<seg_ms[i].min_right_slope
-                 <<",max_right_slope="<<seg_ms[i].max_right_slope
-                <<std::endl;
+//            std::cout<<"i="<<i
+//                    <<",min_left_slope="<<seg_ms[i].min_left_slope
+//                   <<",max_left_slope="<<seg_ms[i].max_left_slope
+//                  <<",min_right_slope="<<seg_ms[i].min_right_slope
+//                 <<",max_right_slope="<<seg_ms[i].max_right_slope
+//                <<std::endl;
 
         }
 
+        float area_ratio = contour_area/ref_seg_total_area;
+//        std::cout<<"ref_seg_total_area="<<ref_seg_total_area<<",area_ratio="<<area_ratio<<std::endl;
+
 
         //if such big line has been detected then it has to be a (curved or a normal)lane
-        if(bounding_length>longLane || bounding_width >longLane ){
-            //如果面积太大，也是不对的
-            if(area_ratio<0.1 ||  area_seq_vec[0]==0){
-                valid_cont=1;
+//        if(bounding_length>longLane || bounding_width >longLane ){
+//            //如果面积太大，也是不对的
+//            if(contour_area> maxLaneWidth*ref_seg_total_height){
+//                valid_cont=10;
+////                std::cout<<"too large...."<<std::endl;
 
-            }else{
+//            }else{
+//                 valid_cont=1;
+//            }
+
+//        }else{
+#if 1
+
+
+        //---------看角度-------
+        //越靠近中心位置的，斜率绝对值可以越大；如果已经确认了最近的右车道线，如果在该车道线的右边有检测到一个怀疑线，如果其斜率更大，说明这个更右边的就不是
+        //越靠近底部的，可能会有90度；越靠近顶部的，不可能会有90度，且如果是弯道的话，角度应该越來越小，否则角度不变；
+        //靠近底部地方，处于x中心线左边的，斜率不可能是大于0的（图像坐标的大的y值的端点的x值，比小的y值端点的x值大，就是斜向左）；同样处于x中心线右边的，斜率不可能是小于0的
+
+        //---------看面积--------
+        //靠近顶端的，面积可以不要这么大
+
+        //看宽高比例 ，规定，横向为宽，竖向为高
+
+            int pict_cent_x=this->currFrame.cols/2;
+            bool seg_valid=false;
+            if(blob_angle_deg==0){
+                valid_cont=2;
+            }else if(blob_angle_deg==90){
                 valid_cont=10;
             }
+            if(blob_angle_deg >0){
+                //at right side-----maybe
 
-        }else{
-#if 1
-            bool seg_valid=false;
-            if(blob_angle_deg >=0){
-                //at right side
+                //前3个区域考虑
+                if(area_seq_vec[0] <3 && (max_x<=pict_cent_x || min_x<=pict_cent_x)){
+                    valid_cont=20;
+                }
                 //之考虑第一个最靠近底边的区域
-                if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_left_slope
+                else if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_left_slope
                         && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_left_slope){
+
+
                     seg_valid=true;
                     valid_cont=3;
                 }else{
@@ -367,7 +568,11 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
                 }
 
             }else{
-                //at left side
+                //at left side -- maybe
+                ////前3个区域考虑,因为如果是后面的，由于弯道的存在，是会可以存在的
+                if(area_seq_vec[0] <3 && (max_x>=pict_cent_x || min_x>=pict_cent_x)){
+                    valid_cont=40;
+                }
                 if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_right_slope
                         && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_right_slope){
                     seg_valid=true;
@@ -377,31 +582,50 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
                 }
             }
 
-            if(seg_valid){
+
+            if(seg_valid % 2 ==1){
                 if ((bounding_length/bounding_width)>=ratio ||
-                        (bounding_width/bounding_length)>=ratio ||
-                        (contour_area< smallLaneArea &&
-                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
-                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
-                         )
-                        ){
-                    valid_cont=7;
+                                        (bounding_width/bounding_length)>=ratio ||
+                                        (contour_area< smallLaneArea &&
+                                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
+                                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
+                                         )){
+
                 }else{
                     valid_cont=8;
                     std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
                 }
-            }else{
-
             }
 
-        }
+//            if(seg_valid){
+//                if ((bounding_length/bounding_width)>=ratio ||
+//                        (bounding_width/bounding_length)>=ratio ||
+//                        (contour_area< smallLaneArea &&
+//                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
+//                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
+//                         )
+//                        ){
+//                    valid_cont=7;
+//                }else{
+//                    valid_cont=8;
+//                    std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
+//                }
+//            }else{
 
+//            }
+
+//        }
+
+
+//         line(for_draw,Poi nt(for_draw.cols/2,0),Point(for_draw.cols/2,for_draw.rows-1),Scalar(0,255,0),1);
         //draw
         Scalar color;
         if(valid_cont==1){
             color=Scalar(0,255,0);
+        }else if(valid_cont==2){
+            color=Scalar(255,0,255);
         }
-        else if(valid_cont==7){
+        else if(valid_cont==3 || valid_cont==5 ||  valid_cont==7){
             color=Scalar(255,0,0);
         }else if(valid_cont==8){
             color=Scalar(147,20,255);
@@ -410,28 +634,43 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
         }
 
 
-        if(valid_cont % 2 == 1){
-            drawContours(for_draw, contours,index, color, CV_FILLED, 8);
-            drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
+        if(valid_cont % 2 ==1){
+
+            //只是简单的进行分类，不考虑转弯时末端的情况
+            valid_contour_index.push_back(index);
+            if(blob_angle_deg>0){
+                right_rects.push_back(rotated_rect);
+                right_rect_aux_infos.push_back(rect_aux_info(min_x,max_x,min_y,max_y,index));
+            }else{
+                left_rects.push_back(rotated_rect);
+                left_rect_aux_infos.push_back(rect_aux_info(min_x,max_x,min_y,max_y,index));
+                std::cout<<"add left_rect_aux_infos index="<<index<<std::endl;
+
+            }
+
+//            drawContours(for_draw, contours,index, color, CV_FILLED, 8);
+//            drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
             //line
             Point2f rect_points[4];
             rotated_rect.points( rect_points );
-            for( int j = 0; j < 4; j++ ){
-                line( for_draw, rect_points[j], rect_points[(j+1)%4], color, 2, 8 );
-            }
-            Point ct((rect_points[0].x+rect_points[2].x)/2,(rect_points[0].y+rect_points[2].y)/2);
-            sprintf(name,";%f,(%d,%d),(%d,%d),(%d,%d),(%d,%d)"/*,%d,%f,%f*/
-                    ,
-                    contour_area*1.0/(for_draw.rows*for_draw.cols)*100,
-                    rect_points[0].x,rect_points[0].y,
-                    rect_points[1].x,rect_points[1].y,
-                    rect_points[2].x,rect_points[2].y,
-                    rect_points[3].x,rect_points[3].y
-
-
+//            for( int j = 0; j < 4; j++ ){
+//                line( for_draw, rect_points[j], rect_points[(j+1)%4], color, 2, 8 );
+//            }
+            Point ct((rect_points[0].x+rect_points[2].x)/2*2/3,(rect_points[0].y+rect_points[2].y)/2);
+            sprintf(name,"%d;%f;%f;%f"
+                    //%f,(%d,%d),(%d,%d),(%d,%d),(%d,%d)"/*,%d,%f,%f*/
+                    ,valid_cont
+                    ,area_ratio
+                    ,contour_area
+                    ,blob_angle_deg
+//                    contour_area*1.0/(for_draw.rows*for_draw.cols)*100,
+//                    rect_points[0].x,rect_points[0].y,
+//                    rect_points[1].x,rect_points[1].y,
+//                    rect_points[2].x,rect_points[2].y,
+//                    rect_points[3].x,rect_points[3].y
 
                     /*,valid_cont,contour_area,rotated_rect.angle*/);
-            putText(for_draw,name,ct,CV_FONT_HERSHEY_COMPLEX,0.5,1);
+//            putText(for_draw,name,ct,CV_FONT_HERSHEY_COMPLEX,0.5,1);
         }
 
 #else
@@ -483,6 +722,9 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
     void NightLaneDetect::blobRemoval()
     {
+
+
+
         markLane();
 
         // find all contours in the binary image
@@ -491,8 +733,13 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
                      hierarchy, CV_RETR_CCOMP,
                      CV_CHAIN_APPROX_SIMPLE);
 
-        left_rects.clear();
-        right_rects.clear();
+        left_rects.resize(0);
+        right_rects.resize(0);
+        left_rect_aux_infos.resize(0);
+        right_rect_aux_infos.resize(0);
+        valid_contour_index.resize(0);
+
+        std::cout<<"contours.size="<<contours.size()<<std::endl;
 
         char name[64];
         // for removing invalid blobs
@@ -673,6 +920,112 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
 
 
+        //去除同方向斜率，y长度较短、被另外一个差不多斜率的矩形范围的y包围的矩形框
+        std::cout<<"left_rects.size="<<left_rects.size()<<std::endl;
+        std::cout<<"right_rects.size="<<right_rects.size()<<std::endl;
+
+        if(left_rects.size()>0 ){
+            //left
+
+            vector<int> left_flags;
+            left_flags.resize(left_rects.size());
+            for(int i=0;i<left_flags.size();i++){
+                left_flags[i]=0;
+            }
+
+            for(int i=0;i<left_flags.size()-1;i++){
+                for(int j=i+1;j<left_flags.size();j++){
+                    std::cout<<"left----"<<std::endl;
+                    if(left_flags[j]==1){
+                        continue;
+                    }
+                    if(left_rect_aux_infos[i].contains_y(left_rect_aux_infos[j])){
+                        left_flags[j]=1;
+                    }else if(left_rect_aux_infos[j].contains_y(left_rect_aux_infos[i])){
+                        left_flags[i]=1;
+                        break;//这个i位置的已经被包含了，不需要继续了
+                    }
+                }
+            }
+
+            Scalar color;
+            for(int i=0;i<left_rects.size();i++){
+                std::cout<<"left_rect_aux_infos["<<i<<"].index="<<left_rect_aux_infos[i].index<<std::endl;
+                if(left_flags[i]==1){
+                    color=Scalar(0,0,255);
+                }else{
+                    color=Scalar(255,0,0);
+                    std::cout<<"-111111111111111---left_rect_aux_infos[i].index="<<left_rect_aux_infos[i].index<<std::endl;
+                    drawContours(temp2, contours,left_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+                     std::cout<<"-22222222222222---"<<std::endl;
+                }
+                drawContours(for_draw, contours,left_rect_aux_infos[i].index, color, CV_FILLED, 8);
+                //line
+                Point2f rect_points[4];
+                left_rects[i].points( rect_points );
+                for( int j = 0; j < 4; j++ ){
+                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+                }
+
+            }
+
+        }
+
+        if(right_rects.size()>0){
+            //right
+            vector<int> right_flags;
+            right_flags.resize(right_rects.size());
+            for(int i=0;i<right_flags.size();i++){
+                right_flags[i]=0;
+            }
+
+            for(int i=0;i<right_flags.size()-1;i++){
+                for(int j=i+1;j<right_flags.size();j++){
+                    std::cout<<"right----"<<std::endl;
+                    if(right_flags[j]==1){
+                        continue;
+                    }
+                    if(right_rect_aux_infos[i].contains_y(right_rect_aux_infos[j])){
+                        right_flags[j]=1;
+                    }else if(right_rect_aux_infos[j].contains_y(right_rect_aux_infos[i])){
+                        right_flags[i]=1;
+                        break;//这个i位置的已经被包含了，不需要继续了
+                    }
+                }
+            }
+
+
+            //draw
+            Scalar color;
+            for(int i=0;i<right_rects.size();i++){
+                std::cout<<"right_rect_aux_infos["<<i<<"].index="<<right_rect_aux_infos[i].index<<std::endl;
+                if(right_flags[i]==1){
+                    color=Scalar(0,0,255);
+                }else{
+                    color=Scalar(255,0,0);
+                    std::cout<<"-right----11111---right_rect_aux_infos[i].index="<<right_rect_aux_infos[i].index<<std::endl;
+                    drawContours(temp2, contours,right_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+                     std::cout<<"-right  22222222222222---"<<std::endl;
+                }
+                drawContours(for_draw, contours,right_rect_aux_infos[i].index, color, CV_FILLED, 8);
+                //line
+                Point2f rect_points[4];
+                left_rects[i].points( rect_points );
+                for( int j = 0; j < 4; j++ ){
+                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+                }
+
+            }
+        }
+
+
+
+
+
+
+
+        OptimizePolyfit();
+
         //    FitLaneLine();
 
         imshow("temp", temp);
@@ -682,9 +1035,14 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
 
         //    imshow("temp3",temp3);
-        //    waitKey(0);
+//            waitKey(0);
 
     }
+
+
+
+
+
 
     /**
  * @brief FitLaneLine
@@ -929,7 +1287,13 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
         vector<string> all_pics=getAllFilesWithPathFromDir(path);
         std::sort(all_pics.begin(),all_pics.end(),less<string>());
         Mat frame=imread(all_pics[0]);
-        NightLaneDetect detect(frame);
+        NightLaneDetect detect(frame,0.4);
+
+        namedWindow("temp", 2);
+        namedWindow("temp2", 2);
+        //    imshow("lane",currFrame);
+        namedWindow("color-draw",2);
+
 
         int idx=0;
         while(1)

@@ -36,6 +36,10 @@ typedef struct SegMent{
     cv::Mat pic;
     cv::Mat middle_pic;
     cv::Mat all_mask; //white_mask | yellow_mask
+
+
+	float seg_area;//该段面积
+	float max_allow_ratio;//对于一个contour，如果落在该段内，所得到的面积，占该段面积最大的比例
 }SegMent;
 
 void filter_colors(cv::Mat& output_mask,cv::Mat& output_image,std::vector<SegMent> seg_ms);

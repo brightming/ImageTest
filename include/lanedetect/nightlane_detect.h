@@ -22,6 +22,35 @@ void makeFromVid(string path);
 void makeFromFolder(string path);
 
 
+struct rect_aux_info{
+	int min_x;
+	int max_x;
+	int min_y;
+	int max_y;
+	int index;
+
+	rect_aux_info(int mn_x,int mx_x,int mn_y,int mx_y,int idx){
+		this->min_x=mn_x;
+		this->max_x=mx_x;
+		this->min_y=mn_y;
+		this->max_y=mx_y;
+		this->index=idx;
+	}
+	rect_aux_info(){
+		this->min_x=0;
+		this->max_x=0;
+		this->min_y=0;
+		this->max_y=0;
+		this->index=0;
+	}
+	bool contains_y(rect_aux_info other){
+		if(min_y<=other.min_y  && this->max_y>= other.max_y){
+			return true;
+		}
+		return false;
+	}
+};
+
 class NightLaneDetect
 {
 public:
@@ -60,7 +89,10 @@ public:
 
     //----//
     vector<RotatedRect> left_rects;
+	vector<rect_aux_info> left_rect_aux_infos;
     vector<RotatedRect> right_rects;
+	vector<rect_aux_info> right_rect_aux_infos;
+	vector<int> valid_contour_index;
 
     vector<SegMent> seg_ms;//roi分段的信息
 
@@ -105,6 +137,17 @@ public:
     bool isValidContour(vector<vector<Point> >& contours,int index);
 
 
+	/**
+	 * @brief OptimizeFilter
+	 * 优化后的挑选有效blog的方法
+	 */
+	void OptimizeFilter();
+
+	/**
+	 * @brief OptimizePolyfit
+	 * 曲线拟合
+	 */
+	void OptimizePolyfit();
 
 
 
