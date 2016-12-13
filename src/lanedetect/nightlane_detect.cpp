@@ -648,8 +648,8 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
             }
 
-//            drawContours(for_draw, contours,index, color, CV_FILLED, 8);
-//            drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
+            drawContours(for_draw, contours,index, color, CV_FILLED, 8);
+            drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
             //line
             Point2f rect_points[4];
             rotated_rect.points( rect_points );
@@ -920,111 +920,111 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
 
 
-        //去除同方向斜率，y长度较短、被另外一个差不多斜率的矩形范围的y包围的矩形框
-        std::cout<<"left_rects.size="<<left_rects.size()<<std::endl;
-        std::cout<<"right_rects.size="<<right_rects.size()<<std::endl;
+//        //去除同方向斜率，y长度较短、被另外一个差不多斜率的矩形范围的y包围的矩形框
+//        std::cout<<"left_rects.size="<<left_rects.size()<<std::endl;
+//        std::cout<<"right_rects.size="<<right_rects.size()<<std::endl;
 
-        if(left_rects.size()>0 ){
-            //left
+//        if(left_rects.size()>0 ){
+//            //left
 
-            vector<int> left_flags;
-            left_flags.resize(left_rects.size());
-            for(int i=0;i<left_flags.size();i++){
-                left_flags[i]=0;
-            }
+//            vector<int> left_flags;
+//            left_flags.resize(left_rects.size());
+//            for(int i=0;i<left_flags.size();i++){
+//                left_flags[i]=0;
+//            }
 
-            for(int i=0;i<left_flags.size()-1;i++){
-                for(int j=i+1;j<left_flags.size();j++){
-                    std::cout<<"left----"<<std::endl;
-                    if(left_flags[j]==1){
-                        continue;
-                    }
-                    if(left_rect_aux_infos[i].contains_y(left_rect_aux_infos[j])){
-                        left_flags[j]=1;
-                    }else if(left_rect_aux_infos[j].contains_y(left_rect_aux_infos[i])){
-                        left_flags[i]=1;
-                        break;//这个i位置的已经被包含了，不需要继续了
-                    }
-                }
-            }
+//            for(int i=0;i<left_flags.size()-1;i++){
+//                for(int j=i+1;j<left_flags.size();j++){
+//                    std::cout<<"left----"<<std::endl;
+//                    if(left_flags[j]==1){
+//                        continue;
+//                    }
+//                    if(left_rect_aux_infos[i].contains_y(left_rect_aux_infos[j])){
+//                        left_flags[j]=1;
+//                    }else if(left_rect_aux_infos[j].contains_y(left_rect_aux_infos[i])){
+//                        left_flags[i]=1;
+//                        break;//这个i位置的已经被包含了，不需要继续了
+//                    }
+//                }
+//            }
 
-            Scalar color;
-            for(int i=0;i<left_rects.size();i++){
-                std::cout<<"left_rect_aux_infos["<<i<<"].index="<<left_rect_aux_infos[i].index<<std::endl;
-                if(left_flags[i]==1){
-                    color=Scalar(0,0,255);
-                }else{
-                    color=Scalar(255,0,0);
-                    std::cout<<"-111111111111111---left_rect_aux_infos[i].index="<<left_rect_aux_infos[i].index<<std::endl;
-                    drawContours(temp2, contours,left_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
-                     std::cout<<"-22222222222222---"<<std::endl;
-                }
-                drawContours(for_draw, contours,left_rect_aux_infos[i].index, color, CV_FILLED, 8);
-                //line
-                Point2f rect_points[4];
-                left_rects[i].points( rect_points );
-                for( int j = 0; j < 4; j++ ){
-                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
-                }
+//            Scalar color;
+//            for(int i=0;i<left_rects.size();i++){
+//                std::cout<<"left_rect_aux_infos["<<i<<"].index="<<left_rect_aux_infos[i].index<<std::endl;
+//                if(left_flags[i]==1){
+//                    color=Scalar(0,0,255);
+//                }else{
+//                    color=Scalar(255,0,0);
+//                    std::cout<<"-111111111111111---left_rect_aux_infos[i].index="<<left_rect_aux_infos[i].index<<std::endl;
+//                    drawContours(temp2, contours,left_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+//                     std::cout<<"-22222222222222---"<<std::endl;
+//                }
+//                drawContours(for_draw, contours,left_rect_aux_infos[i].index, color, CV_FILLED, 8);
+//                //line
+//                Point2f rect_points[4];
+//                left_rects[i].points( rect_points );
+//                for( int j = 0; j < 4; j++ ){
+//                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+//                }
 
-            }
+//            }
 
-        }
+//        }
 
-        if(right_rects.size()>0){
-            //right
-            vector<int> right_flags;
-            right_flags.resize(right_rects.size());
-            for(int i=0;i<right_flags.size();i++){
-                right_flags[i]=0;
-            }
+//        if(right_rects.size()>0){
+//            //right
+//            vector<int> right_flags;
+//            right_flags.resize(right_rects.size());
+//            for(int i=0;i<right_flags.size();i++){
+//                right_flags[i]=0;
+//            }
 
-            for(int i=0;i<right_flags.size()-1;i++){
-                for(int j=i+1;j<right_flags.size();j++){
-                    std::cout<<"right----"<<std::endl;
-                    if(right_flags[j]==1){
-                        continue;
-                    }
-                    if(right_rect_aux_infos[i].contains_y(right_rect_aux_infos[j])){
-                        right_flags[j]=1;
-                    }else if(right_rect_aux_infos[j].contains_y(right_rect_aux_infos[i])){
-                        right_flags[i]=1;
-                        break;//这个i位置的已经被包含了，不需要继续了
-                    }
-                }
-            }
-
-
-            //draw
-            Scalar color;
-            for(int i=0;i<right_rects.size();i++){
-                std::cout<<"right_rect_aux_infos["<<i<<"].index="<<right_rect_aux_infos[i].index<<std::endl;
-                if(right_flags[i]==1){
-                    color=Scalar(0,0,255);
-                }else{
-                    color=Scalar(255,0,0);
-                    std::cout<<"-right----11111---right_rect_aux_infos[i].index="<<right_rect_aux_infos[i].index<<std::endl;
-                    drawContours(temp2, contours,right_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
-                     std::cout<<"-right  22222222222222---"<<std::endl;
-                }
-                drawContours(for_draw, contours,right_rect_aux_infos[i].index, color, CV_FILLED, 8);
-                //line
-                Point2f rect_points[4];
-                left_rects[i].points( rect_points );
-                for( int j = 0; j < 4; j++ ){
-                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
-                }
-
-            }
-        }
+//            for(int i=0;i<right_flags.size()-1;i++){
+//                for(int j=i+1;j<right_flags.size();j++){
+//                    std::cout<<"right----"<<std::endl;
+//                    if(right_flags[j]==1){
+//                        continue;
+//                    }
+//                    if(right_rect_aux_infos[i].contains_y(right_rect_aux_infos[j])){
+//                        right_flags[j]=1;
+//                    }else if(right_rect_aux_infos[j].contains_y(right_rect_aux_infos[i])){
+//                        right_flags[i]=1;
+//                        break;//这个i位置的已经被包含了，不需要继续了
+//                    }
+//                }
+//            }
 
 
+//            //draw
+//            Scalar color;
+//            for(int i=0;i<right_rects.size();i++){
+//                std::cout<<"right_rect_aux_infos["<<i<<"].index="<<right_rect_aux_infos[i].index<<std::endl;
+//                if(right_flags[i]==1){
+//                    color=Scalar(0,0,255);
+//                }else{
+//                    color=Scalar(255,0,0);
+//                    std::cout<<"-right----11111---right_rect_aux_infos[i].index="<<right_rect_aux_infos[i].index<<std::endl;
+//                    drawContours(temp2, contours,right_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+//                     std::cout<<"-right  22222222222222---"<<std::endl;
+//                }
+//                drawContours(for_draw, contours,right_rect_aux_infos[i].index, color, CV_FILLED, 8);
+//                //line
+//                Point2f rect_points[4];
+//                left_rects[i].points( rect_points );
+//                for( int j = 0; j < 4; j++ ){
+//                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+//                }
+
+//            }
+//        }
 
 
 
 
 
-        OptimizePolyfit();
+
+
+//        OptimizePolyfit();
 
         //    FitLaneLine();
 
