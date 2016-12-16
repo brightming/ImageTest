@@ -111,6 +111,11 @@ public:
     LeastSquare right_last_lsq;
 
 
+    //
+    KalmanFilter KF;
+    Mat measurement;
+
+
     void updateSensitivity();
 
 

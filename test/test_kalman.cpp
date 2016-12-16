@@ -107,8 +107,14 @@ void test_slope_track(){
     int m_dir=0;//0:increase 1:decrease
     int b_dir=0;//0:increase 1:decrease
 
-    measurement.at<float>(0,0)=1;
-    measurement.at<float>(1,0)=2;
+    KF.statePost.at<float>(0)=3;
+    KF.statePost.at<float>(1)=20;
+    KF.statePost.at<float>(2)=0;
+    KF.statePost.at<float>(3)=0;
+
+
+    measurement.at<float>(0,0)=3;
+    measurement.at<float>(1,0)=20;
 
 
     namedWindow("kalman");
@@ -125,13 +131,13 @@ void test_slope_track(){
         cout<<"prediction="<<prediction<<endl;
         //3.update measurement
         if(m_dir==0){
-            current_m*=1.1;
+            current_m*=1.01;
             if(current_m>max_m){
                 current_m=max_m;
                 m_dir=1;
             }
         }else{
-            current_m/=1.1;
+            current_m/=1.01;
             if(current_m<min_m){
                 current_m=min_m;
                 m_dir=0;
@@ -163,23 +169,27 @@ void test_slope_track(){
         image.setTo(Scalar(255,255,255,0));
 
         //predict line
-
         float x1=0;
         float y1=cvRound(prediction.at<float>(0)*x1+prediction.at<float>(1)) ;
         float x2=image.cols/2;
         float y2=cvRound(prediction.at<float>(0)*x2+prediction.at<float>(1)) ;
         line(image,Point(x1,y1),Point(x2,y2),Scalar(0,255,0),8);
 
-        x1=0;
-        float y1_m=cvRound(current_m*x1+current_b) ;
-        x2=image.cols/2;
-        float y2_m=cvRound(current_m*x2+current_b) ;
-        line(image,Point(x1,y1),Point(x2,y2),Scalar(255,0,0),2);
+        float x1_cr=0;
+        float y1_m=cvRound(current_m*x1_cr+current_b) ;
+        float x2_cr=image.cols/2;
+        float y2_m=cvRound(current_m*x2_cr+current_b) ;
+        line(image,Point(x1_cr,y1_m),Point(x2_cr,y2_m),Scalar(255,0,0),2);
 
 
 
-        //        circle(image,predict_pt,5,Scalar(0,255,0),3);    //predicted point with green
-        //        circle(image,mousePosition,5,Scalar(255,0,0),3); //current position with red
+                circle(image,Point(x1,y1),5,Scalar(0,255,0),8);    //predicted point with green
+                circle(image,Point(x2,y2),5,Scalar(0,255,0),8);    //predicted point with green
+
+
+                circle(image,Point(x1_cr,y1_m),5,Scalar(255,0,0),3); //current position with red
+                circle(image,Point(x2_cr,y2_m),5,Scalar(255,0,0),3); //current position with red
+
 
         //        char buf[256];
         //        sprintf(buf,"predicted position:(%3d,%3d)",predict_pt.x,predict_pt.y);
@@ -190,7 +200,7 @@ void test_slope_track(){
 
 
         imshow("kalman", image);
-        int key=waitKey(0);
+        int key=waitKey(500);
         if (key==27){//esc
             break;
         }
@@ -271,7 +281,8 @@ void test_calc_slope(){
 int main(){
 
 
-    test_calc_slope();
+//    test_calc_slope();
+    test_slope_track();
 
     return 0;
 }

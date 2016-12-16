@@ -117,6 +117,23 @@ NightLaneDetect::NightLaneDetect(Mat startFrame,float roi_hight_ratio)
     }
 
 
+
+    //1.kalman filter setup
+//    const int stateNum=4;                                      //状态值4×1向量(m,b,△m,△b)
+//    const int measureNum=2;                                    //测量值2×1向量(m,b)
+//    KF.init(stateNum, measureNum, 0);
+
+//    KF.transitionMatrix = *(Mat_<float>(4, 4) <<1,0,1,0,0,1,0,1,0,0,1,0,0,0,0,1);  //转移矩阵A
+//    setIdentity(KF.measurementMatrix);                                             //测量矩阵H
+//    setIdentity(KF.processNoiseCov, Scalar::all(1e-5));                            //系统噪声方差矩阵Q
+//    setIdentity(KF.measurementNoiseCov, Scalar::all(1e-1));                        //测量噪声方差矩阵R
+//    setIdentity(KF.errorCovPost, Scalar::all(1));                                  //后验错误估计协方差矩阵P
+//    rng.fill(KF.statePost,RNG::UNIFORM,0,winHeight>winWidth?winWidth:winHeight);   //初始状态值x(0)
+
+//    measurement = Mat::zeros(measureNum, 1, CV_32F);                           //初始测量值x'(0)，因为后面要更新这个值，所以必须先定义
+
+
+
     //    namedWindow("lane",2);
     //    namedWindow("midstep", 2);
     //    namedWindow("currframe", 2);
@@ -152,7 +169,7 @@ void NightLaneDetect::getLane()
 
     //    imshow("currframe", currFrame);
     blobRemoval();  //use OptimizeFilter instead
-//    OptimizeFilter();
+    //    OptimizeFilter();
 }
 
 void NightLaneDetect::markLane()
@@ -237,7 +254,7 @@ void NightLaneDetect::markLane()
                                      Point( dilation_size, dilation_size ) );
     ///膨胀操作
     Mat before=temp.clone();
-//    imshow("bef",before);
+    //    imshow("bef",before);
     erode( temp, temp, element );
 
 
@@ -259,7 +276,7 @@ void NightLaneDetect::markLane()
 
 
 void NightLaneDetect::OptimizePolyfit(){
-//    std::cout<<">>>>>>OptimizePolyfit"<<std::endl;
+    //    std::cout<<">>>>>>OptimizePolyfit"<<std::endl;
     char name[64];
     //简单策略
     //从x中心，向上搜素，每一行，都搜左边3个点，搜右边3个点
@@ -285,9 +302,9 @@ void NightLaneDetect::OptimizePolyfit(){
         if(tmp_x.size()>0){
             left_ps.push_back(Point(tmp_t_x/tmp_x.size(),r));
             circle(for_draw,Point(tmp_t_x/tmp_x.size(),r),3,Scalar(255,255,0),2);
-//            std::cout<<"left_p="<<Point(tmp_t_x/tmp_x.size(),r)<<std::endl;
-//            sprintf(name,"%d",idx++);
-//            putText(for_draw,name,Point(tmp_t_x/tmp_x.size()+100,r),CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            //            std::cout<<"left_p="<<Point(tmp_t_x/tmp_x.size(),r)<<std::endl;
+            //            sprintf(name,"%d",idx++);
+            //            putText(for_draw,name,Point(tmp_t_x/tmp_x.size()+100,r),CV_FONT_HERSHEY_COMPLEX,0.5,1);
         }
 
 
@@ -341,20 +358,20 @@ void NightLaneDetect::OptimizePolyfit(){
             }
             if(y>=roi_rect.y && y<for_draw.rows){
                 dst_left_ps.push_back(Point(r,y));
-//                circle(for_draw,Point(r,y),3,Scalar(255,248,220),2);
-//                std::cout<<"get pt:"<<Point(r,y)<<endl;
+                //                circle(for_draw,Point(r,y),3,Scalar(255,248,220),2);
+                //                std::cout<<"get pt:"<<Point(r,y)<<endl;
             }
 
         }
         for(int i=1;i<dst_left_ps.size()-1;i++){
             line(for_draw,dst_left_ps[i],dst_left_ps[i+1],Scalar(255,144,30),2);
-//            std::cout<<"from pt:"<<dst_left_ps[i]<<" to pt : "<<dst_left_ps[i+1]<<std::endl;
+            //            std::cout<<"from pt:"<<dst_left_ps[i]<<" to pt : "<<dst_left_ps[i+1]<<std::endl;
         }
     }
 
 
 
-//    return;
+    //    return;
     //-----------right------------//
     if(right_ps.size()>0){
         Mat right_dst=Mat::zeros(order+1,1,CV_32FC1);
@@ -432,22 +449,22 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
     //====conditions for removing contours====//
 
     contour_area = contourArea(contours[index]) ;
-//    float area_ratio=contour_area*1.0/(for_draw.rows*for_draw.cols)*100;
+    //    float area_ratio=contour_area*1.0/(for_draw.rows*for_draw.cols)*100;
 
 
-//    if(contour_area>30){
+    //    if(contour_area>30){
 
-//        drawContours(for_draw, contours,index, Scalar(255), CV_FILLED, 8);
-//        drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
-//        rotated_rect    = minAreaRect(contours[index]);
-//        Point2f rect_points[4];
-//        rotated_rect.points( rect_points );
-//        for( int j = 0; j < 4; j++ ){
-//            line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,255,255), 1, 8 );
-//        }
-//        sprintf(name,"area:%f,angle=%f",contour_area,rotated_rect.angle);
-//        putText(for_draw,name,rect_points[0],CV_FONT_HERSHEY_COMPLEX,0.5,1);
-//    }
+    //        drawContours(for_draw, contours,index, Scalar(255), CV_FILLED, 8);
+    //        drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
+    //        rotated_rect    = minAreaRect(contours[index]);
+    //        Point2f rect_points[4];
+    //        rotated_rect.points( rect_points );
+    //        for( int j = 0; j < 4; j++ ){
+    //            line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,255,255), 1, 8 );
+    //        }
+    //        sprintf(name,"area:%f,angle=%f",contour_area,rotated_rect.angle);
+    //        putText(for_draw,name,rect_points[0],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+    //    }
 
 
     if(contour_area > minSize){
@@ -467,8 +484,10 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
         //openCV selects length and width based on their orientation
         //so angle needs to be adjusted accordingly
         blob_angle_deg = rotated_rect.angle;
+        int blob_plus_90=0;
         if (bounding_width < bounding_length){
             blob_angle_deg = 90 + blob_angle_deg;
+            blob_plus_90=1;
         }
 
 
@@ -504,31 +523,31 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
                     min_y=rect_points[j].y;
                 }
             }
-//            std::cout<<"i="<<i
-//                    <<",min_left_slope="<<seg_ms[i].min_left_slope
-//                   <<",max_left_slope="<<seg_ms[i].max_left_slope
-//                  <<",min_right_slope="<<seg_ms[i].min_right_slope
-//                 <<",max_right_slope="<<seg_ms[i].max_right_slope
-//                <<std::endl;
+            //            std::cout<<"i="<<i
+            //                    <<",min_left_slope="<<seg_ms[i].min_left_slope
+            //                   <<",max_left_slope="<<seg_ms[i].max_left_slope
+            //                  <<",min_right_slope="<<seg_ms[i].min_right_slope
+            //                 <<",max_right_slope="<<seg_ms[i].max_right_slope
+            //                <<std::endl;
 
         }
 
         float area_ratio = contour_area/ref_seg_total_area;
-//        std::cout<<"ref_seg_total_area="<<ref_seg_total_area<<",area_ratio="<<area_ratio<<std::endl;
+        //        std::cout<<"ref_seg_total_area="<<ref_seg_total_area<<",area_ratio="<<area_ratio<<std::endl;
 
 
         //if such big line has been detected then it has to be a (curved or a normal)lane
-//        if(bounding_length>longLane || bounding_width >longLane ){
-//            //如果面积太大，也是不对的
-//            if(contour_area> maxLaneWidth*ref_seg_total_height){
-//                valid_cont=10;
-////                std::cout<<"too large...."<<std::endl;
+        //        if(bounding_length>longLane || bounding_width >longLane ){
+        //            //如果面积太大，也是不对的
+        //            if(contour_area> maxLaneWidth*ref_seg_total_height){
+        //                valid_cont=10;
+        ////                std::cout<<"too large...."<<std::endl;
 
-//            }else{
-//                 valid_cont=1;
-//            }
+        //            }else{
+        //                 valid_cont=1;
+        //            }
 
-//        }else{
+        //        }else{
 #if 1
 
 
@@ -542,82 +561,82 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
 
         //看宽高比例 ，规定，横向为宽，竖向为高
 
-            int pict_cent_x=this->currFrame.cols/2;
-            bool seg_valid=false;
-            if(blob_angle_deg==0){
-                valid_cont=2;
-            }else if(blob_angle_deg==90){
-                valid_cont=10;
+        int pict_cent_x=this->currFrame.cols/2;
+        bool seg_valid=false;
+        if(blob_angle_deg==0){
+            valid_cont=2;
+        }else if(blob_angle_deg==90){
+            valid_cont=10;
+        }
+        if(blob_angle_deg >0){
+            //at right side-----maybe
+
+            //前3个区域考虑
+            if(area_seq_vec[0] <3 && (max_x<=pict_cent_x || min_x<=pict_cent_x)){
+                valid_cont=20;
             }
-            if(blob_angle_deg >0){
-                //at right side-----maybe
-
-                //前3个区域考虑
-                if(area_seq_vec[0] <3 && (max_x<=pict_cent_x || min_x<=pict_cent_x)){
-                    valid_cont=20;
-                }
-                //之考虑第一个最靠近底边的区域
-                else if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_left_slope
-                        && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_left_slope){
+            //之考虑第一个最靠近底边的区域
+            else if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_left_slope
+                    && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_left_slope){
 
 
-                    seg_valid=true;
-                    valid_cont=3;
-                }else{
-                    valid_cont=4;
-                }
+                seg_valid=true;
+                valid_cont=3;
+            }else{
+                valid_cont=4;
+            }
+
+        }else{
+            //at left side -- maybe
+            ////前3个区域考虑,因为如果是后面的，由于弯道的存在，是会可以存在的
+            if(area_seq_vec[0] <3 && (max_x>=pict_cent_x || min_x>=pict_cent_x)){
+                valid_cont=40;
+            }
+            if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_right_slope
+                    && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_right_slope){
+                seg_valid=true;
+                valid_cont=5;
+            }else{
+                valid_cont=6;
+            }
+        }
+
+
+        if(seg_valid % 2 ==1){
+            if ((bounding_length/bounding_width)>=ratio ||
+                    (bounding_width/bounding_length)>=ratio ||
+                    (contour_area< smallLaneArea &&
+                     ((contour_area/(bounding_width*bounding_length)) > .75) &&
+                     ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
+                     )){
 
             }else{
-                //at left side -- maybe
-                ////前3个区域考虑,因为如果是后面的，由于弯道的存在，是会可以存在的
-                if(area_seq_vec[0] <3 && (max_x>=pict_cent_x || min_x>=pict_cent_x)){
-                    valid_cont=40;
-                }
-                if(abs(blob_angle_deg)>= seg_ms[area_seq_vec[0]].min_right_slope
-                        && abs(blob_angle_deg) <= seg_ms[area_seq_vec[0]].max_right_slope){
-                    seg_valid=true;
-                    valid_cont=5;
-                }else{
-                    valid_cont=6;
-                }
+                valid_cont=8;
+                std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
             }
+        }
+
+        //            if(seg_valid){
+        //                if ((bounding_length/bounding_width)>=ratio ||
+        //                        (bounding_width/bounding_length)>=ratio ||
+        //                        (contour_area< smallLaneArea &&
+        //                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
+        //                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
+        //                         )
+        //                        ){
+        //                    valid_cont=7;
+        //                }else{
+        //                    valid_cont=8;
+        //                    std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
+        //                }
+        //            }else{
+
+        //            }
+
+        //        }
 
 
-            if(seg_valid % 2 ==1){
-                if ((bounding_length/bounding_width)>=ratio ||
-                                        (bounding_width/bounding_length)>=ratio ||
-                                        (contour_area< smallLaneArea &&
-                                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
-                                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
-                                         )){
-
-                }else{
-                    valid_cont=8;
-                    std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
-                }
-            }
-
-//            if(seg_valid){
-//                if ((bounding_length/bounding_width)>=ratio ||
-//                        (bounding_width/bounding_length)>=ratio ||
-//                        (contour_area< smallLaneArea &&
-//                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
-//                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
-//                         )
-//                        ){
-//                    valid_cont=7;
-//                }else{
-//                    valid_cont=8;
-//                    std::cout<<"seg_valid ok! but not fill other conditions!"<<std::endl;
-//                }
-//            }else{
-
-//            }
-
-//        }
-
-
-//         line(for_draw,Poi nt(for_draw.cols/2,0),Point(for_draw.cols/2,for_draw.rows-1),Scalar(0,255,0),1);
+        //         line(for_draw,Poi nt(for_draw.cols/2,0),Point(for_draw.cols/2,for_draw.rows-1),Scalar(0,255,0),1);
         //draw
         Scalar color;
         if(valid_cont==1){
@@ -653,730 +672,859 @@ bool NightLaneDetect::isValidContour(vector<vector<Point> >& contours,int index)
             //line
             Point2f rect_points[4];
             rotated_rect.points( rect_points );
-//            for( int j = 0; j < 4; j++ ){
-//                line( for_draw, rect_points[j], rect_points[(j+1)%4], color, 2, 8 );
-//            }
+
+
+            for( int j = 0; j < 4; j++ ){
+                line( for_draw, rect_points[j], rect_points[(j+1)%4], color, 2, 8 );
+                std::cout<<"rectPoint "<<j<<"="<<rect_points[j]<<std::endl;
+            }
             Point ct((rect_points[0].x+rect_points[2].x)/2*2/3,(rect_points[0].y+rect_points[2].y)/2);
-            sprintf(name,"%d;%f;%f;%f"
+
+
+            //            sprintf(name,"0:(%f,%f)",rect_points[0].x,rect_points[0].y);
+            //            putText(for_draw,name,rect_points[0],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            //            sprintf(name,"1:(%f,%f)",rect_points[1].x,rect_points[1].y);
+            //            putText(for_draw,name,rect_points[1],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            //            sprintf(name,"2:(%f,%f)",rect_points[2].x,rect_points[2].y);
+            //            putText(for_draw,name,rect_points[2],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            //            sprintf(name,"3:(%f,%f)",rect_points[3].x,rect_points[3].y);
+            //            putText(for_draw,name,rect_points[3],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+
+            vector<double> xs,ys;
+            if(blob_plus_90){
+                //右边,斜率大于0
+                std::cout<<"\n-------------------------"
+                           <<"\nright ----0-1("<<rect_points[0].x<<","<<rect_points[0].y<<")->("<<rect_points[1].x<<","<<rect_points[1].y<<"),slope="<<(rect_points[1].y-rect_points[0].y)/(rect_points[1].x-rect_points[0].x)
+                        <<" 2-3("<<rect_points[0].x<<","<<rect_points[0].y<<")->("<<rect_points[1].x<<","<<rect_points[1].y<<"),slope="<<(rect_points[3].y-rect_points[2].y)/(rect_points[3].x-rect_points[2].x)
+                        <<std::endl;
+                xs.push_back(rect_points[1].x);
+                xs.push_back(rect_points[0].x);
+
+                ys.push_back(rect_points[1].y);
+                ys.push_back(rect_points[0].y);
+
+                LeastSquare lsq01(xs,ys);
+                std::cout<<"lsq01,m="<<lsq01.getM()<<",b="<<lsq01.getB()<<std::endl;
+
+
+                xs.resize(0);
+                ys.resize(0);
+                xs.push_back(rect_points[3].x);
+                xs.push_back(rect_points[2].x);
+
+                ys.push_back(rect_points[3].y);
+                ys.push_back(rect_points[2].y);
+
+                LeastSquare lsq23(xs,ys);
+                std::cout<<"lsq23,m="<<lsq23.getM()<<",b="<<lsq23.getB()<<std::endl;
+
+
+                xs.resize(0);
+                ys.resize(0);
+                xs.push_back((rect_points[0].x+rect_points[3].x)/2);
+                xs.push_back((rect_points[1].x+rect_points[2].x)/2);
+
+                ys.push_back((rect_points[0].y+rect_points[3].y)/2);
+                ys.push_back((rect_points[1].y+rect_points[2].y)/2);
+
+                LeastSquare lsqmid(xs,ys);
+                std::cout<<"lsqmid,m="<<lsqmid.getM()<<",b="<<lsqmid.getB()<<std::endl;
+
+
+
+
+            }else{
+
+            }
+
+
+            sprintf(name,"%d;%f;%f;%f;"
                     //%f,(%d,%d),(%d,%d),(%d,%d),(%d,%d)"/*,%d,%f,%f*/
-                    ,valid_cont
-                    ,area_ratio
-                    ,contour_area
+                    ,blob_plus_90
+                    ,bounding_width
+                    ,bounding_length
                     ,blob_angle_deg
-//                    contour_area*1.0/(for_draw.rows*for_draw.cols)*100,
-//                    rect_points[0].x,rect_points[0].y,
-//                    rect_points[1].x,rect_points[1].y,
-//                    rect_points[2].x,rect_points[2].y,
-//                    rect_points[3].x,rect_points[3].y
+                    //                    contour_area*1.0/(for_draw.rows*for_draw.cols)*100,
+                    //                    rect_points[0].x,rect_points[0].y,
+                    //                    rect_points[1].x,rect_points[1].y,
+                    //                    ,rect_points[2].x,rect_points[2].y
+                    //                    ,rect_points[3].x,rect_points[3].y
 
                     /*,valid_cont,contour_area,rotated_rect.angle*/);
-//            putText(for_draw,name,ct,CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            putText(for_draw,name,ct,CV_FONT_HERSHEY_COMPLEX,0.5,1);
+
+
+
         }
 
 #else
-            //angle of orientation of blob should not be near horizontal or vertical
-            //vertical blobs are allowed only near center-bottom region, where centre lane mark is present
-            //length:width >= ratio for valid line segments
-            //if area is very small then ratio limits are compensated
-            if ((blob_angle_deg <-10 || blob_angle_deg >-10 ) &&
-                    ((blob_angle_deg > -70 && blob_angle_deg < 70 ) ||
-                     (rotated_rect.center.y > vertical_top &&
-                      rotated_rect.center.x > vertical_left &&
-                      rotated_rect.center.x < vertical_right
-                      )
+        //angle of orientation of blob should not be near horizontal or vertical
+        //vertical blobs are allowed only near center-bottom region, where centre lane mark is present
+        //length:width >= ratio for valid line segments
+        //if area is very small then ratio limits are compensated
+        if ((blob_angle_deg <-10 || blob_angle_deg >-10 ) &&
+                ((blob_angle_deg > -70 && blob_angle_deg < 70 ) ||
+                 (rotated_rect.center.y > vertical_top &&
+                  rotated_rect.center.x > vertical_left &&
+                  rotated_rect.center.x < vertical_right
+                  )
+                 )
+                ){
+            //                    std::cout<<"bounding_length="<<bounding_length<<",bounding_width="<<bounding_width
+            //                            <<",ratio="<<ratio<<",contour_area="<<contour_area<<",smallLaneArea="<<smallLaneArea
+            //                           <<",bounding_length/bounding_width="<<bounding_length/bounding_width;
+            if ((bounding_length/bounding_width)>=ratio ||
+                    (bounding_width/bounding_length)>=ratio ||
+                    (contour_area< smallLaneArea &&
+                     ((contour_area/(bounding_width*bounding_length)) > .75) &&
+                     ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
                      )
                     ){
-                //                    std::cout<<"bounding_length="<<bounding_length<<",bounding_width="<<bounding_width
-                //                            <<",ratio="<<ratio<<",contour_area="<<contour_area<<",smallLaneArea="<<smallLaneArea
-                //                           <<",bounding_length/bounding_width="<<bounding_length/bounding_width;
-                if ((bounding_length/bounding_width)>=ratio ||
-                        (bounding_width/bounding_length)>=ratio ||
-                        (contour_area< smallLaneArea &&
-                         ((contour_area/(bounding_width*bounding_length)) > .75) &&
-                         ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)
-                         )
-                        ){
-                    valid_cont=2;
-                    //                        std::cout<<"----------take"<<std::endl;
-                    drawContours(for_draw, contours,index, Scalar(0,0,255), CV_FILLED, 8);
-                    drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
-                    //line
-                    Point2f rect_points[4];
-                    rotated_rect.points( rect_points );
-                    for( int j = 0; j < 4; j++ ){
-                        line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,0,255), 2, 8 );
-                    }
-
-                }else{
-                    //                        std::cout<<"----------drop"<<std::endl;
+                valid_cont=2;
+                //                        std::cout<<"----------take"<<std::endl;
+                drawContours(for_draw, contours,index, Scalar(0,0,255), CV_FILLED, 8);
+                drawContours(temp2, contours,index, Scalar(255), CV_FILLED, 8);
+                //line
+                Point2f rect_points[4];
+                rotated_rect.points( rect_points );
+                for( int j = 0; j < 4; j++ ){
+                    line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,0,255), 2, 8 );
                 }
+
+            }else{
+                //                        std::cout<<"----------drop"<<std::endl;
             }
-#endif
-
-
         }
+#endif
 
 
     }
 
 
-    void NightLaneDetect::blobRemoval()
+}
+
+
+void NightLaneDetect::blobRemoval()
+{
+
+
+
+    markLane();
+
+    // find all contours in the binary image
+    temp.copyTo(binary_image);
+    findContours(binary_image, contours,
+                 hierarchy, CV_RETR_CCOMP,
+                 CV_CHAIN_APPROX_SIMPLE);
+
+    left_rects.resize(0);
+    right_rects.resize(0);
+    left_rect_aux_infos.resize(0);
+    right_rect_aux_infos.resize(0);
+    valid_contour_index.resize(0);
+
+    std::cout<<"contours.size="<<contours.size()<<std::endl;
+
+    char name[64];
+    // for removing invalid blobs
+    if (!contours.empty())
     {
 
-
-
-        markLane();
-
-        // find all contours in the binary image
-        temp.copyTo(binary_image);
-        findContours(binary_image, contours,
-                     hierarchy, CV_RETR_CCOMP,
-                     CV_CHAIN_APPROX_SIMPLE);
-
-        left_rects.resize(0);
-        right_rects.resize(0);
-        left_rect_aux_infos.resize(0);
-        right_rect_aux_infos.resize(0);
-        valid_contour_index.resize(0);
-
-        std::cout<<"contours.size="<<contours.size()<<std::endl;
-
-        char name[64];
-        // for removing invalid blobs
-        if (!contours.empty())
+        std::cout<<"----------------------------------\n"
+                <<"------------------------------------\n";
+        vector<vector<Point> > contours_poly( contours.size() );
+        for (size_t i=0; i<contours.size(); ++i)
         {
 
-            vector<vector<Point> > contours_poly( contours.size() );
-            for (size_t i=0; i<contours.size(); ++i)
-            {
-
-                this->isValidContour(contours,i);
+            this->isValidContour(contours,i);
 
 #if 0
-                int valid_cont=0; //0 means invalid
-                //====conditions for removing contours====//
+            int valid_cont=0; //0 means invalid
+            //====conditions for removing contours====//
 
-                contour_area = contourArea(contours[i]) ;
+            contour_area = contourArea(contours[i]) ;
 
-                //            std::cout<<"contour_area="<<contour_area<<",minSize="<<minSize<<std::endl;
-                //blob size should not be less than lower threshold
+            //            std::cout<<"contour_area="<<contour_area<<",minSize="<<minSize<<std::endl;
+            //blob size should not be less than lower threshold
 
-                //            if(contour_area>30){
+            //            if(contour_area>30){
 
-                //                rotated_rect    = minAreaRect(contours[i]);
-                //                Point2f rect_points[4];
-                //                rotated_rect.points( rect_points );
-                //                for( int j = 0; j < 4; j++ ){
-                //                    line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,255,255), 1, 8 );
-                //                }
-                //                sprintf(name,"area:%f,angle=%f",contour_area,rotated_rect.angle);
-                //                putText(for_draw,name,rect_points[0],CV_FONT_HERSHEY_COMPLEX,0.5,1);
-                //            }
+            //                rotated_rect    = minAreaRect(contours[i]);
+            //                Point2f rect_points[4];
+            //                rotated_rect.points( rect_points );
+            //                for( int j = 0; j < 4; j++ ){
+            //                    line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,255,255), 1, 8 );
+            //                }
+            //                sprintf(name,"area:%f,angle=%f",contour_area,rotated_rect.angle);
+            //                putText(for_draw,name,rect_points[0],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+            //            }
 
-                if(contour_area > minSize)
+            if(contour_area > minSize)
+            {
+                rotated_rect    = minAreaRect(contours[i]);
+                sz              = rotated_rect.size;
+                bounding_width  = sz.width;
+                bounding_length = sz.height;
+
+
+                //openCV selects length and width based on their orientation
+                //so angle needs to be adjusted accordingly
+                blob_angle_deg = rotated_rect.angle;
+                if (bounding_width < bounding_length){
+                    blob_angle_deg = 90 + blob_angle_deg;
+                }
+
+
+
+
+                //if such big line has been detected then it has to be a (curved or a normal)lane
+                if(bounding_length>longLane || bounding_width >longLane)
                 {
-                    rotated_rect    = minAreaRect(contours[i]);
-                    sz              = rotated_rect.size;
-                    bounding_width  = sz.width;
-                    bounding_length = sz.height;
 
+                    valid_cont=1;
 
-                    //openCV selects length and width based on their orientation
-                    //so angle needs to be adjusted accordingly
-                    blob_angle_deg = rotated_rect.angle;
-                    if (bounding_width < bounding_length){
-                        blob_angle_deg = 90 + blob_angle_deg;
-                    }
-
-
-
-
-                    //if such big line has been detected then it has to be a (curved or a normal)lane
-                    if(bounding_length>longLane || bounding_width >longLane)
-                    {
-
-                        valid_cont=1;
-
-                    }
-
-                    //angle of orientation of blob should not be near horizontal or vertical
-                    //vertical blobs are allowed only near center-bottom region, where centre lane mark is present
-                    //length:width >= ratio for valid line segments
-                    //if area is very small then ratio limits are compensated
-                    else if ((blob_angle_deg <-10 || blob_angle_deg >-10 ) &&
-                             ((blob_angle_deg > -70 && blob_angle_deg < 70 ) ||
-                              (rotated_rect.center.y > vertical_top &&
-                               rotated_rect.center.x > vertical_left && rotated_rect.center.x < vertical_right)))
-                    {
-
-
-                        //                    std::cout<<"bounding_length="<<bounding_length<<",bounding_width="<<bounding_width
-                        //                            <<",ratio="<<ratio<<",contour_area="<<contour_area<<",smallLaneArea="<<smallLaneArea
-                        //                           <<",bounding_length/bounding_width="<<bounding_length/bounding_width;
-                        if ((bounding_length/bounding_width)>=ratio || (bounding_width/bounding_length)>=ratio
-                                ||(contour_area< smallLaneArea &&  ((contour_area/(bounding_width*bounding_length)) > .75) &&
-                                   ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)))
-                        {
-
-                            valid_cont=2;
-                            //                        std::cout<<"----------take"<<std::endl;
-
-                        }else{
-                            //                        std::cout<<"----------drop"<<std::endl;
-                        }
-                    }
                 }
 
-
-                //valid one
-                if(valid_cont>0 /*&& (abs(blob_angle_deg)>35 && abs(blob_angle_deg)<50)*/){
-                    //------------draw  begin -----//
-                    Point2f rect_points[4];
-                    rotated_rect.points( rect_points );
-                    Point ct((rect_points[0].x+rect_points[2].x)/2,(rect_points[0].y+rect_points[2].y)/2);
-
-                    //                //在原图以很小的阈值进行fillflood，填充
-                    //                //然后再次找contours，会合并一些
-                    //                int loDiff = 10, upDiff = 10;
-                    //                int newMaskVal = 255;
-                    //                Scalar newVal = Scalar(255,0,0);
-                    //                Rect ccomp;
-                    //                int lo = loDiff;
-                    //                int up = upDiff;
-                    //                int flags = 8 + (newMaskVal << 8) + CV_FLOODFILL_FIXED_RANGE;
+                //angle of orientation of blob should not be near horizontal or vertical
+                //vertical blobs are allowed only near center-bottom region, where centre lane mark is present
+                //length:width >= ratio for valid line segments
+                //if area is very small then ratio limits are compensated
+                else if ((blob_angle_deg <-10 || blob_angle_deg >-10 ) &&
+                         ((blob_angle_deg > -70 && blob_angle_deg < 70 ) ||
+                          (rotated_rect.center.y > vertical_top &&
+                           rotated_rect.center.x > vertical_left && rotated_rect.center.x < vertical_right)))
+                {
 
 
-                    //                Mat mask;
-                    //                mask.create(temp3.rows, temp3.cols, CV_8UC1);
-                    ////                cvtColor(mask, mask, COLOR_BGR2GRAY);
-                    //                cv::resize(mask,mask,Size(temp3.cols+2,temp3.rows+2));
+                    //                    std::cout<<"bounding_length="<<bounding_length<<",bounding_width="<<bounding_width
+                    //                            <<",ratio="<<ratio<<",contour_area="<<contour_area<<",smallLaneArea="<<smallLaneArea
+                    //                           <<",bounding_length/bounding_width="<<bounding_length/bounding_width;
+                    if ((bounding_length/bounding_width)>=ratio || (bounding_width/bounding_length)>=ratio
+                            ||(contour_area< smallLaneArea &&  ((contour_area/(bounding_width*bounding_length)) > .75) &&
+                               ((bounding_length/bounding_width)>=2 || (bounding_width/bounding_length)>=2)))
+                    {
 
-                    //                mask-=mask;
-                    //                //mask 只包含了Rotated_rect,即是说只能在这个范围内fillflood，免得错的太离谱
-                    //                approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
-                    //                for(int pi=0;pi<contours_poly[i].size();pi++){
-                    //                    Vec3i pi_v=ori_pic.at<Vec3i>(contours_poly[i][pi].y,contours_poly[i][pi].x);
-                    //                    //只填充那些接近白色和黄色的点
-                    //                    int dist_white=static_cast<int>(cv::norm<int,3>(Vec3i(pi_v[0]-white.at<Vec3i>(0,0)[0],
-                    //                                              pi_v[1]-white.at<Vec3i>(0,0)[1],pi_v[2]-white.at<Vec3i>(0,0)[2])));
+                        valid_cont=2;
+                        //                        std::cout<<"----------take"<<std::endl;
 
-                    //                    int dist_yellow=static_cast<int>(cv::norm<int,3>(Vec3i(pi_v[0]-yellow.at<Vec3i>(0,0)[0],
-                    //                                              pi_v[1]-yellow.at<Vec3i>(0,0)[1],pi_v[2]-yellow.at<Vec3i>(0,0)[2])));
-
-                    //                    if(dist_white<10 || dist_yellow<10){
-
-                    //                    }else{
-                    //                        std::cout<<"don't fillflood------!!!!"<<std::endl;
-                    //                        continue;
-                    //                    }
-
-
-                    //                    //或者统计rotated_rect内的颜色的平均值
-                    //                    floodFill(temp3, mask, contours_poly[i][pi], newVal, &ccomp, Scalar(lo, lo, lo), Scalar(up, up, up), flags);
-                    //                }
-                    ////                imshow("mask",mask);
-
-
-
-                    drawContours(currFrame, contours,i, Scalar(255), CV_FILLED, 8);
-
-                    //                fillPoly(temp3,contours_poly[i],Scalar(0,128,255));
-                    //                drawContours( temp2, contours_poly, i, Scalar(255), 1, 8, vector<Vec4i>(), 0, Point() );
-                    drawContours(temp2, contours,i, Scalar(255), CV_FILLED, 8);
-                    //                drawContours(for_draw, contours,i, Scalar(255), CV_FILLED, 8);
-
-
-
-                    //line
-                    //                for( int j = 0; j < 4; j++ ){
-                    //                    line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,0,255), 2, 8 );
-                    //                }
-
-                    sprintf(name,"area:%f,angle=%f",contour_area,blob_angle_deg);
-
-                    putText(for_draw,name,ct
-                            ,CV_FONT_HERSHEY_COMPLEX,0.5,1);
-                    circle(for_draw,ct,1,Scalar(0,255,0),1);
-
-
-                    //------------draw  end -----//
-
-
-                    //right or left
-                    if(blob_angle_deg>0){
-                        right_rects.push_back(rotated_rect);
                     }else{
-                        left_rects.push_back(rotated_rect);
+                        //                        std::cout<<"----------drop"<<std::endl;
                     }
-
-                    //按照segments 将其分割为一段段的rotated_rect(本来是一个大的rotated_rect的）
-                    //TODO
-
-
                 }
+            }
+
+
+            //valid one
+            if(valid_cont>0 /*&& (abs(blob_angle_deg)>35 && abs(blob_angle_deg)<50)*/){
+                //------------draw  begin -----//
+                Point2f rect_points[4];
+                rotated_rect.points( rect_points );
+                Point ct((rect_points[0].x+rect_points[2].x)/2,(rect_points[0].y+rect_points[2].y)/2);
+
+                //                //在原图以很小的阈值进行fillflood，填充
+                //                //然后再次找contours，会合并一些
+                //                int loDiff = 10, upDiff = 10;
+                //                int newMaskVal = 255;
+                //                Scalar newVal = Scalar(255,0,0);
+                //                Rect ccomp;
+                //                int lo = loDiff;
+                //                int up = upDiff;
+                //                int flags = 8 + (newMaskVal << 8) + CV_FLOODFILL_FIXED_RANGE;
+
+
+                //                Mat mask;
+                //                mask.create(temp3.rows, temp3.cols, CV_8UC1);
+                ////                cvtColor(mask, mask, COLOR_BGR2GRAY);
+                //                cv::resize(mask,mask,Size(temp3.cols+2,temp3.rows+2));
+
+                //                mask-=mask;
+                //                //mask 只包含了Rotated_rect,即是说只能在这个范围内fillflood，免得错的太离谱
+                //                approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
+                //                for(int pi=0;pi<contours_poly[i].size();pi++){
+                //                    Vec3i pi_v=ori_pic.at<Vec3i>(contours_poly[i][pi].y,contours_poly[i][pi].x);
+                //                    //只填充那些接近白色和黄色的点
+                //                    int dist_white=static_cast<int>(cv::norm<int,3>(Vec3i(pi_v[0]-white.at<Vec3i>(0,0)[0],
+                //                                              pi_v[1]-white.at<Vec3i>(0,0)[1],pi_v[2]-white.at<Vec3i>(0,0)[2])));
+
+                //                    int dist_yellow=static_cast<int>(cv::norm<int,3>(Vec3i(pi_v[0]-yellow.at<Vec3i>(0,0)[0],
+                //                                              pi_v[1]-yellow.at<Vec3i>(0,0)[1],pi_v[2]-yellow.at<Vec3i>(0,0)[2])));
+
+                //                    if(dist_white<10 || dist_yellow<10){
+
+                //                    }else{
+                //                        std::cout<<"don't fillflood------!!!!"<<std::endl;
+                //                        continue;
+                //                    }
+
+
+                //                    //或者统计rotated_rect内的颜色的平均值
+                //                    floodFill(temp3, mask, contours_poly[i][pi], newVal, &ccomp, Scalar(lo, lo, lo), Scalar(up, up, up), flags);
+                //                }
+                ////                imshow("mask",mask);
+
+
+
+                drawContours(currFrame, contours,i, Scalar(255), CV_FILLED, 8);
+
+                //                fillPoly(temp3,contours_poly[i],Scalar(0,128,255));
+                //                drawContours( temp2, contours_poly, i, Scalar(255), 1, 8, vector<Vec4i>(), 0, Point() );
+                drawContours(temp2, contours,i, Scalar(255), CV_FILLED, 8);
+                //                drawContours(for_draw, contours,i, Scalar(255), CV_FILLED, 8);
+
+
+
+                //line
+                //                for( int j = 0; j < 4; j++ ){
+                //                    line( for_draw, rect_points[j], rect_points[(j+1)%4], Scalar(0,0,255), 2, 8 );
+                //                }
+
+                sprintf(name,"area:%f,angle=%f",contour_area,blob_angle_deg);
+
+                putText(for_draw,name,ct
+                        ,CV_FONT_HERSHEY_COMPLEX,0.5,1);
+                circle(for_draw,ct,1,Scalar(0,255,0),1);
+
+
+                //------------draw  end -----//
+
+
+                //right or left
+                if(blob_angle_deg>0){
+                    right_rects.push_back(rotated_rect);
+                }else{
+                    left_rects.push_back(rotated_rect);
+                }
+
+                //按照segments 将其分割为一段段的rotated_rect(本来是一个大的rotated_rect的）
+                //TODO
+
+
+            }
 #endif
+        }
+    }
+
+
+    static float global_avg_ms=0;
+    static float global_avg_bs=0;
+
+    //--看右边的平均斜率，平均截距产生的直线---//
+    if(right_rects.size()>0){
+        vector<double> xs,ys;
+        double ms=0,bs=0;
+        int valid_cnt=0;
+        for(int i=0;i<right_rects.size();i++){
+            Point2f rect_points[4];
+            right_rects[i].points( rect_points );
+            xs.resize(0);
+            ys.resize(0);
+            xs.push_back((rect_points[0].x+rect_points[3].x)/2);
+            xs.push_back((rect_points[1].x+rect_points[2].x)/2);
+
+            ys.push_back((rect_points[0].y+rect_points[3].y)/2);
+            ys.push_back((rect_points[1].y+rect_points[2].y)/2);
+
+            LeastSquare lsqmid(xs,ys);
+//            std::cout<<"lsqmid,m="<<lsqmid.getM()<<",b="<<lsqmid.getB()<<std::endl;
+
+            //标准
+            if(lsqmid.getM()<0.6){
+                cout<<"M="<<lsqmid.getM()<<",drop!\n";
+                continue;
+            }
+            ms+=lsqmid.getM();
+            bs+=lsqmid.getB();
+            valid_cnt++;
+
+        }
+        if(valid_cnt>0){
+            double avg_m=ms/valid_cnt;
+            double avg_b=bs/valid_cnt;
+
+
+            float y1=for_draw.rows-2;
+            float x1=(y1-avg_b)/avg_m;
+
+            float y2=0;
+            float x2=(y2-avg_b)/avg_m;
+            line(for_draw,Point(x1,y1),Point(x2,y2),Scalar(0,255,0),2);
+            std::cout<<"use m="<<avg_m<<",use b="<<avg_b<<endl;
+
+            global_avg_ms=avg_m;
+            global_avg_bs=avg_b;
+        }else{
+
+            std::cout<<"use global m instead..."<<endl;
+            if(global_avg_ms>0){
+                float y1=for_draw.rows-2;
+                float x1=(y1-global_avg_bs)/global_avg_ms;
+
+                float y2=0;
+                float x2=(y2-global_avg_bs)/global_avg_ms;
+                line(for_draw,Point(x1,y1),Point(x2,y2),Scalar(0,255,255),2);
             }
         }
 
 
-
-//        //去除同方向斜率，y长度较短、被另外一个差不多斜率的矩形范围的y包围的矩形框
-//        std::cout<<"left_rects.size="<<left_rects.size()<<std::endl;
-//        std::cout<<"right_rects.size="<<right_rects.size()<<std::endl;
-
-//        if(left_rects.size()>0 ){
-//            //left
-
-//            vector<int> left_flags;
-//            left_flags.resize(left_rects.size());
-//            for(int i=0;i<left_flags.size();i++){
-//                left_flags[i]=0;
-//            }
-
-//            for(int i=0;i<left_flags.size()-1;i++){
-//                for(int j=i+1;j<left_flags.size();j++){
-//                    std::cout<<"left----"<<std::endl;
-//                    if(left_flags[j]==1){
-//                        continue;
-//                    }
-//                    if(left_rect_aux_infos[i].contains_y(left_rect_aux_infos[j])){
-//                        left_flags[j]=1;
-//                    }else if(left_rect_aux_infos[j].contains_y(left_rect_aux_infos[i])){
-//                        left_flags[i]=1;
-//                        break;//这个i位置的已经被包含了，不需要继续了
-//                    }
-//                }
-//            }
-
-//            Scalar color;
-//            for(int i=0;i<left_rects.size();i++){
-//                std::cout<<"left_rect_aux_infos["<<i<<"].index="<<left_rect_aux_infos[i].index<<std::endl;
-//                if(left_flags[i]==1){
-//                    color=Scalar(0,0,255);
-//                }else{
-//                    color=Scalar(255,0,0);
-//                    std::cout<<"-111111111111111---left_rect_aux_infos[i].index="<<left_rect_aux_infos[i].index<<std::endl;
-//                    drawContours(temp2, contours,left_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
-//                     std::cout<<"-22222222222222---"<<std::endl;
-//                }
-//                drawContours(for_draw, contours,left_rect_aux_infos[i].index, color, CV_FILLED, 8);
-//                //line
-//                Point2f rect_points[4];
-//                left_rects[i].points( rect_points );
-//                for( int j = 0; j < 4; j++ ){
-//                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
-//                }
-
-//            }
-
-//        }
-
-//        if(right_rects.size()>0){
-//            //right
-//            vector<int> right_flags;
-//            right_flags.resize(right_rects.size());
-//            for(int i=0;i<right_flags.size();i++){
-//                right_flags[i]=0;
-//            }
-
-//            for(int i=0;i<right_flags.size()-1;i++){
-//                for(int j=i+1;j<right_flags.size();j++){
-//                    std::cout<<"right----"<<std::endl;
-//                    if(right_flags[j]==1){
-//                        continue;
-//                    }
-//                    if(right_rect_aux_infos[i].contains_y(right_rect_aux_infos[j])){
-//                        right_flags[j]=1;
-//                    }else if(right_rect_aux_infos[j].contains_y(right_rect_aux_infos[i])){
-//                        right_flags[i]=1;
-//                        break;//这个i位置的已经被包含了，不需要继续了
-//                    }
-//                }
-//            }
-
-
-//            //draw
-//            Scalar color;
-//            for(int i=0;i<right_rects.size();i++){
-//                std::cout<<"right_rect_aux_infos["<<i<<"].index="<<right_rect_aux_infos[i].index<<std::endl;
-//                if(right_flags[i]==1){
-//                    color=Scalar(0,0,255);
-//                }else{
-//                    color=Scalar(255,0,0);
-//                    std::cout<<"-right----11111---right_rect_aux_infos[i].index="<<right_rect_aux_infos[i].index<<std::endl;
-//                    drawContours(temp2, contours,right_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
-//                     std::cout<<"-right  22222222222222---"<<std::endl;
-//                }
-//                drawContours(for_draw, contours,right_rect_aux_infos[i].index, color, CV_FILLED, 8);
-//                //line
-//                Point2f rect_points[4];
-//                left_rects[i].points( rect_points );
-//                for( int j = 0; j < 4; j++ ){
-//                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
-//                }
-
-//            }
-//        }
-
-
-
-
-
-
-
-//        OptimizePolyfit();
-
-        //    FitLaneLine();
-
-        imshow("temp", temp);
-        imshow("temp2", temp2);
-        //    imshow("lane",currFrame);
-        imshow("color-draw",for_draw);
-
-
-        //    imshow("temp3",temp3);
-//            waitKey(0);
-
     }
 
+    //        //去除同方向斜率，y长度较短、被另外一个差不多斜率的矩形范围的y包围的矩形框
+    //        std::cout<<"left_rects.size="<<left_rects.size()<<std::endl;
+    //        std::cout<<"right_rects.size="<<right_rects.size()<<std::endl;
+
+    //        if(left_rects.size()>0 ){
+    //            //left
+
+    //            vector<int> left_flags;
+    //            left_flags.resize(left_rects.size());
+    //            for(int i=0;i<left_flags.size();i++){
+    //                left_flags[i]=0;
+    //            }
+
+    //            for(int i=0;i<left_flags.size()-1;i++){
+    //                for(int j=i+1;j<left_flags.size();j++){
+    //                    std::cout<<"left----"<<std::endl;
+    //                    if(left_flags[j]==1){
+    //                        continue;
+    //                    }
+    //                    if(left_rect_aux_infos[i].contains_y(left_rect_aux_infos[j])){
+    //                        left_flags[j]=1;
+    //                    }else if(left_rect_aux_infos[j].contains_y(left_rect_aux_infos[i])){
+    //                        left_flags[i]=1;
+    //                        break;//这个i位置的已经被包含了，不需要继续了
+    //                    }
+    //                }
+    //            }
+
+    //            Scalar color;
+    //            for(int i=0;i<left_rects.size();i++){
+    //                std::cout<<"left_rect_aux_infos["<<i<<"].index="<<left_rect_aux_infos[i].index<<std::endl;
+    //                if(left_flags[i]==1){
+    //                    color=Scalar(0,0,255);
+    //                }else{
+    //                    color=Scalar(255,0,0);
+    //                    std::cout<<"-111111111111111---left_rect_aux_infos[i].index="<<left_rect_aux_infos[i].index<<std::endl;
+    //                    drawContours(temp2, contours,left_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+    //                     std::cout<<"-22222222222222---"<<std::endl;
+    //                }
+    //                drawContours(for_draw, contours,left_rect_aux_infos[i].index, color, CV_FILLED, 8);
+    //                //line
+    //                Point2f rect_points[4];
+    //                left_rects[i].points( rect_points );
+    //                for( int j = 0; j < 4; j++ ){
+    //                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+    //                }
+
+    //            }
+
+    //        }
+
+    //        if(right_rects.size()>0){
+    //            //right
+    //            vector<int> right_flags;
+    //            right_flags.resize(right_rects.size());
+    //            for(int i=0;i<right_flags.size();i++){
+    //                right_flags[i]=0;
+    //            }
+
+    //            for(int i=0;i<right_flags.size()-1;i++){
+    //                for(int j=i+1;j<right_flags.size();j++){
+    //                    std::cout<<"right----"<<std::endl;
+    //                    if(right_flags[j]==1){
+    //                        continue;
+    //                    }
+    //                    if(right_rect_aux_infos[i].contains_y(right_rect_aux_infos[j])){
+    //                        right_flags[j]=1;
+    //                    }else if(right_rect_aux_infos[j].contains_y(right_rect_aux_infos[i])){
+    //                        right_flags[i]=1;
+    //                        break;//这个i位置的已经被包含了，不需要继续了
+    //                    }
+    //                }
+    //            }
+
+
+    //            //draw
+    //            Scalar color;
+    //            for(int i=0;i<right_rects.size();i++){
+    //                std::cout<<"right_rect_aux_infos["<<i<<"].index="<<right_rect_aux_infos[i].index<<std::endl;
+    //                if(right_flags[i]==1){
+    //                    color=Scalar(0,0,255);
+    //                }else{
+    //                    color=Scalar(255,0,0);
+    //                    std::cout<<"-right----11111---right_rect_aux_infos[i].index="<<right_rect_aux_infos[i].index<<std::endl;
+    //                    drawContours(temp2, contours,right_rect_aux_infos[i].index, Scalar(255), CV_FILLED, 8);
+    //                     std::cout<<"-right  22222222222222---"<<std::endl;
+    //                }
+    //                drawContours(for_draw, contours,right_rect_aux_infos[i].index, color, CV_FILLED, 8);
+    //                //line
+    //                Point2f rect_points[4];
+    //                left_rects[i].points( rect_points );
+    //                for( int j = 0; j < 4; j++ ){
+    //                    line( for_draw, rect_points[j], rect_points[(j+1)%4],color, 2, 8 );
+    //                }
+
+    //            }
+    //        }
 
 
 
 
 
-    /**
+
+
+    //        OptimizePolyfit();
+
+    //    FitLaneLine();
+
+    imshow("temp", temp);
+    imshow("temp2", temp2);
+    //    imshow("lane",currFrame);
+    imshow("color-draw",for_draw);
+
+
+    //    imshow("temp3",temp3);
+    //            waitKey(0);
+
+}
+
+
+
+
+
+
+/**
  * @brief FitLaneLine
  *
  * @param valid_pixel_mat
  */
 
-    void NightLaneDetect::FitLaneLine(){
+void NightLaneDetect::FitLaneLine(){
 
-        //可能存在有多条线
-        vector<vector<Point2i> > left_points;
-        vector<vector<Point2i> > right_points;
+    //可能存在有多条线
+    vector<vector<Point2i> > left_points;
+    vector<vector<Point2i> > right_points;
 
-        vector<Point2i> lf_ps;
-        vector<Point2i> rt_ps;
+    vector<Point2i> lf_ps;
+    vector<Point2i> rt_ps;
 
-        //left
-        int poly_n=1;
-        double left_p[poly_n+1];
-        int left_n=left_rects.size()*2;
-        double left_x[left_n];
-        double left_y[left_n];
+    //left
+    int poly_n=1;
+    double left_p[poly_n+1];
+    int left_n=left_rects.size()*2;
+    double left_x[left_n];
+    double left_y[left_n];
 
-        vector<double> left_vec_x;
-        vector<double> left_vec_y;
+    vector<double> left_vec_x;
+    vector<double> left_vec_y;
 
-        //right
-        double right_p[poly_n+1];
-        int right_n=right_rects.size()*2;
-        double right_x[right_n];
-        double right_y[right_n];
+    //right
+    double right_p[poly_n+1];
+    int right_n=right_rects.size()*2;
+    double right_x[right_n];
+    double right_y[right_n];
 
-        vector<double> right_vec_x;
-        vector<double> right_vec_y;
-
-
-        Point2f rps[4];
-        Point2i rp1,rp2;
-        int i=0;
-
-        for(RotatedRect rr:left_rects){
-            rr.points( rps );
-            rp1.x=(rps[0].x+rps[1].x)/2;
-            rp1.y=(rps[0].y+rps[1].y)/2;
-
-            rp2.x=(rps[2].x+rps[3].x)/2;
-            rp2.y=(rps[2].y+rps[3].y)/2;
-
-            lf_ps.push_back(rp1);
-            lf_ps.push_back(rp2);
-
-            line(for_draw,rp1,rp2,Scalar(0,0,255),2);
-
-            left_x[i]=rp1.x;
-            left_x[i+1]=rp2.x;
-            left_y[i]=rp1.y;
-            left_y[i+1]=rp2.y;
-
-            left_vec_x.push_back(rp1.x);
-            left_vec_x.push_back(rp2.x);
-            left_vec_y.push_back(rp1.y);
-            left_vec_y.push_back(rp2.y);
-
-            ++i;
-        }
-
-        i=0;
-        for(RotatedRect rr:right_rects){
-            rr.points( rps );
-            rp1.x=(rps[1].x+rps[2].x)/2; //注意，左边和右边的取中间点不一样
-            rp1.y=(rps[1].y+rps[2].y)/2;
-
-            rp2.x=(rps[3].x+rps[0].x)/2;
-            rp2.y=(rps[3].y+rps[0].y)/2;
-
-            rt_ps.push_back(rp1);
-            rt_ps.push_back(rp2);
-
-            line(for_draw,rp1,rp2,Scalar(0,0,255),2);
-
-            right_x[i]=rp1.x;
-            right_x[i+1]=rp2.x;
-            right_y[i]=rp1.y;
-            right_y[i+1]=rp2.y;
-
-            right_vec_x.push_back(rp1.x);
-            right_vec_x.push_back(rp2.x);
-            right_vec_y.push_back(rp1.y);
-            right_vec_y.push_back(rp2.y);
-
-            ++i;
-        }
+    vector<double> right_vec_x;
+    vector<double> right_vec_y;
 
 
-        //曲线拟合
-        //    polyfit(left_n, left_x, left_y, poly_n, left_p);
-        //    polyfit(right_n, right_x, right_y, poly_n, right_p);
+    Point2f rps[4];
+    Point2i rp1,rp2;
+    int i=0;
+
+    for(RotatedRect rr:left_rects){
+        rr.points( rps );
+        rp1.x=(rps[0].x+rps[1].x)/2;
+        rp1.y=(rps[0].y+rps[1].y)/2;
+
+        rp2.x=(rps[2].x+rps[3].x)/2;
+        rp2.y=(rps[2].y+rps[3].y)/2;
+
+        lf_ps.push_back(rp1);
+        lf_ps.push_back(rp2);
+
+        line(for_draw,rp1,rp2,Scalar(0,0,255),2);
+
+        left_x[i]=rp1.x;
+        left_x[i+1]=rp2.x;
+        left_y[i]=rp1.y;
+        left_y[i+1]=rp2.y;
+
+        left_vec_x.push_back(rp1.x);
+        left_vec_x.push_back(rp2.x);
+        left_vec_y.push_back(rp1.y);
+        left_vec_y.push_back(rp2.y);
+
+        ++i;
+    }
+
+    i=0;
+    for(RotatedRect rr:right_rects){
+        rr.points( rps );
+        rp1.x=(rps[1].x+rps[2].x)/2; //注意，左边和右边的取中间点不一样
+        rp1.y=(rps[1].y+rps[2].y)/2;
+
+        rp2.x=(rps[3].x+rps[0].x)/2;
+        rp2.y=(rps[3].y+rps[0].y)/2;
+
+        rt_ps.push_back(rp1);
+        rt_ps.push_back(rp2);
+
+        line(for_draw,rp1,rp2,Scalar(0,0,255),2);
+
+        right_x[i]=rp1.x;
+        right_x[i+1]=rp2.x;
+        right_y[i]=rp1.y;
+        right_y[i+1]=rp2.y;
+
+        right_vec_x.push_back(rp1.x);
+        right_vec_x.push_back(rp2.x);
+        right_vec_y.push_back(rp1.y);
+        right_vec_y.push_back(rp2.y);
+
+        ++i;
+    }
 
 
-        //    std::cout<<"left_p:"<<left_p[0]<<","<<left_p[1]/*<<","<<left_p[2]*/<<std::endl;
-        //    for(i=0;i<left_n;i++){
-        //         double y=left_p[0]+left_p[1]*pow(left_x[i],1);//+left_p[2]*pow(left_x[i],2);
-        //         std::cout<<" x="<<left_x[i]<<",real_y="<<left_y[i]<<",fit_y="<<y<<std::endl;
-
-        //         circle(for_draw,Point(left_x[i],left_y[i]),10,Scalar(255,0,0),1);
-        //         circle(for_draw,Point(left_x[i],y),10,Scalar(0,0,255),1);
-        //    }
+    //曲线拟合
+    //    polyfit(left_n, left_x, left_y, poly_n, left_p);
+    //    polyfit(right_n, right_x, right_y, poly_n, right_p);
 
 
+    //    std::cout<<"left_p:"<<left_p[0]<<","<<left_p[1]/*<<","<<left_p[2]*/<<std::endl;
+    //    for(i=0;i<left_n;i++){
+    //         double y=left_p[0]+left_p[1]*pow(left_x[i],1);//+left_p[2]*pow(left_x[i],2);
+    //         std::cout<<" x="<<left_x[i]<<",real_y="<<left_y[i]<<",fit_y="<<y<<std::endl;
 
-        LeastSquare lsq_left;
-        LeastSquare lsq_right;
-        if(left_vec_x.size()>=2){
-            lsq_left.setData(left_vec_x,left_vec_y);
-            this->left_last_lsq.setM(lsq_left.getM());
-            this->left_last_lsq.setB(lsq_left.getB());
-        }else if(this->left_last_lsq.getB()!=0 && this->left_last_lsq.getM()!=0){
-            std::cout<<"left_vec_x.size()<2 !! use previous lsq!"<<std::endl;
-            lsq_left.setM(this->left_last_lsq.getM());
-            lsq_left.setB(this->left_last_lsq.getB());
-            waitKey(0);
-        }else{
-            std::cout<<"left_vec_x 以及previous left lsq both null!!!!"<<std::endl;
-            lsq_left.setM(0);
-            lsq_left.setB(0);
-        }
-
-        if(right_vec_x.size()>=2){
-            lsq_right.setData(right_vec_x,right_vec_y);
-            this->right_last_lsq.setM(lsq_right.getM());
-            this->right_last_lsq.setB(lsq_right.getB());
-        }else if(this->right_last_lsq.getB()!=0 && this->right_last_lsq.getM()!=0){
-            std::cout<<"right_vec_x.size()<2 !! use previous lsq!"<<std::endl;
-            lsq_right.setM(this->right_last_lsq.getM());
-            lsq_right.setB(this->right_last_lsq.getB());
-            waitKey(0);
-        }else{
-            std::cout<<"right_vec_x 以及previous right lsq both null!!!!"<<std::endl;
-            lsq_right.setM(0);
-            lsq_right.setB(0);
-        }
+    //         circle(for_draw,Point(left_x[i],left_y[i]),10,Scalar(255,0,0),1);
+    //         circle(for_draw,Point(left_x[i],y),10,Scalar(0,0,255),1);
+    //    }
 
 
-        vector<Point> left_p_array;
-        vector<Point> right_p_array;
 
-        if(lsq_left.isValid()){
-            for(i=0;i<roi_rect.width/2;i++){
-                double y=lsq_left.getY(i);
-                //        std::cout<<" x="<<left_vec_x[i]<<",real_y="<<left_vec_y[i]<<",fit_y="<<y<<std::endl;
-                if(y>=ori_pic.rows){
-                    continue;
-                }
-                if(y<roi_rect.tl().y){
-                    break;
-                }
-                left_p_array.push_back(Point(i,y));
+    LeastSquare lsq_left;
+    LeastSquare lsq_right;
+    if(left_vec_x.size()>=2){
+        lsq_left.setData(left_vec_x,left_vec_y);
+        this->left_last_lsq.setM(lsq_left.getM());
+        this->left_last_lsq.setB(lsq_left.getB());
+    }else if(this->left_last_lsq.getB()!=0 && this->left_last_lsq.getM()!=0){
+        std::cout<<"left_vec_x.size()<2 !! use previous lsq!"<<std::endl;
+        lsq_left.setM(this->left_last_lsq.getM());
+        lsq_left.setB(this->left_last_lsq.getB());
+        waitKey(0);
+    }else{
+        std::cout<<"left_vec_x 以及previous left lsq both null!!!!"<<std::endl;
+        lsq_left.setM(0);
+        lsq_left.setB(0);
+    }
+
+    if(right_vec_x.size()>=2){
+        lsq_right.setData(right_vec_x,right_vec_y);
+        this->right_last_lsq.setM(lsq_right.getM());
+        this->right_last_lsq.setB(lsq_right.getB());
+    }else if(this->right_last_lsq.getB()!=0 && this->right_last_lsq.getM()!=0){
+        std::cout<<"right_vec_x.size()<2 !! use previous lsq!"<<std::endl;
+        lsq_right.setM(this->right_last_lsq.getM());
+        lsq_right.setB(this->right_last_lsq.getB());
+        waitKey(0);
+    }else{
+        std::cout<<"right_vec_x 以及previous right lsq both null!!!!"<<std::endl;
+        lsq_right.setM(0);
+        lsq_right.setB(0);
+    }
+
+
+    vector<Point> left_p_array;
+    vector<Point> right_p_array;
+
+    if(lsq_left.isValid()){
+        for(i=0;i<roi_rect.width/2;i++){
+            double y=lsq_left.getY(i);
+            //        std::cout<<" x="<<left_vec_x[i]<<",real_y="<<left_vec_y[i]<<",fit_y="<<y<<std::endl;
+            if(y>=ori_pic.rows){
+                continue;
             }
-            //划线---------------------//
-            for(i=0;i<left_p_array.size()-1;i++){
-                line(for_draw,left_p_array[i],left_p_array[i+1],Scalar(255,0,0),2);
+            if(y<roi_rect.tl().y){
+                break;
             }
+            left_p_array.push_back(Point(i,y));
+        }
+        //划线---------------------//
+        for(i=0;i<left_p_array.size()-1;i++){
+            line(for_draw,left_p_array[i],left_p_array[i+1],Scalar(255,0,0),2);
+        }
+    }
+
+    if(lsq_right.isValid()){
+        for(i=ori_pic.cols-1;i>0;i--){
+            double y=lsq_right.getY(i);
+
+
+            if(y>=ori_pic.rows){
+                continue;
+            }
+            if(y<roi_rect.tl().y){
+                break;
+            }
+            right_p_array.push_back(Point(i,y));
         }
 
-        if(lsq_right.isValid()){
-            for(i=ori_pic.cols-1;i>0;i--){
-                double y=lsq_right.getY(i);
 
-
-                if(y>=ori_pic.rows){
-                    continue;
-                }
-                if(y<roi_rect.tl().y){
-                    break;
-                }
-                right_p_array.push_back(Point(i,y));
-            }
-
-
-            for(i=0;i<right_p_array.size()-1;i++){
-                line(for_draw,right_p_array[i],right_p_array[i+1],Scalar(255,0,0),2);
-            }
+        for(i=0;i<right_p_array.size()-1;i++){
+            line(for_draw,right_p_array[i],right_p_array[i+1],Scalar(255,0,0),2);
         }
-
-
-
     }
 
 
 
-    Mat do_clahe(Mat& bgr_image){
-        // READ RGB color image and convert it to Lab
-        cv::Mat lab_image;
-        cv::cvtColor(bgr_image, lab_image, CV_BGR2Lab);
+}
 
-        // Extract the L channel
-        std::vector<cv::Mat> lab_planes(3);
-        cv::split(lab_image, lab_planes);  // now we have the L image in lab_planes[0]
 
-        // apply the CLAHE algorithm to the L channel
-        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-        clahe->setClipLimit(4);
-        cv::Mat dst;
-        clahe->apply(lab_planes[0], dst);
 
-        // Merge the the color planes back into an Lab image
-        dst.copyTo(lab_planes[0]);
-        cv::merge(lab_planes, lab_image);
+Mat do_clahe(Mat& bgr_image){
+    // READ RGB color image and convert it to Lab
+    cv::Mat lab_image;
+    cv::cvtColor(bgr_image, lab_image, CV_BGR2Lab);
 
-        // convert back to RGB
-        cv::Mat image_clahe;
-        cv::cvtColor(lab_image, image_clahe, CV_Lab2BGR);
+    // Extract the L channel
+    std::vector<cv::Mat> lab_planes(3);
+    cv::split(lab_image, lab_planes);  // now we have the L image in lab_planes[0]
 
-        // display the results  (you might also want to see lab_planes[0] before and after).
-        //       cv::imshow("image original", bgr_image);
-        //    cv::imshow("resImg2", image_clahe);
-        //           cv::waitKey();
-        return image_clahe;
+    // apply the CLAHE algorithm to the L channel
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(4);
+    cv::Mat dst;
+    clahe->apply(lab_planes[0], dst);
+
+    // Merge the the color planes back into an Lab image
+    dst.copyTo(lab_planes[0]);
+    cv::merge(lab_planes, lab_image);
+
+    // convert back to RGB
+    cv::Mat image_clahe;
+    cv::cvtColor(lab_image, image_clahe, CV_Lab2BGR);
+
+    // display the results  (you might also want to see lab_planes[0] before and after).
+    //       cv::imshow("image original", bgr_image);
+    //    cv::imshow("resImg2", image_clahe);
+    //           cv::waitKey();
+    return image_clahe;
+}
+
+void NightLaneDetect::nextFrame(Mat &nxt)
+{
+    Mat tmp=do_clahe(nxt);
+    if(nxt.channels()>1){
+        cvtColor(tmp, tmp, CV_BGR2GRAY);
     }
+    //		currFrame = nxt;                        //if processing is to be done at original size
 
-    void NightLaneDetect::nextFrame(Mat &nxt)
+    resize(tmp ,currFrame, currFrame.size()); //resizing the input image for faster processing
+    resize(nxt ,for_draw, currFrame.size());
+    resize(nxt,ori_pic,currFrame.size());
+    getLane();
+}
+
+Mat NightLaneDetect::getResult()
+{
+    return temp2;
+}
+
+void makeFromFolder(string path){
+
+    vector<string> all_pics=getAllFilesWithPathFromDir(path);
+    std::sort(all_pics.begin(),all_pics.end(),less<string>());
+    Mat frame=imread(all_pics[0]);
+    NightLaneDetect detect(frame,0.4);
+
+    namedWindow("temp", 2);
+    namedWindow("temp2", 2);
+    //    imshow("lane",currFrame);
+    namedWindow("color-draw",2);
+
+
+    int idx=0;
+    while(1)
     {
-        Mat tmp=do_clahe(nxt);
-        if(nxt.channels()>1){
-            cvtColor(tmp, tmp, CV_BGR2GRAY);
+        if(idx>=all_pics.size()){
+            idx=0;
         }
-        //		currFrame = nxt;                        //if processing is to be done at original size
+        frame=imread(all_pics[idx++]);
 
-        resize(tmp ,currFrame, currFrame.size()); //resizing the input image for faster processing
-        resize(nxt ,for_draw, currFrame.size());
-        resize(nxt,ori_pic,currFrame.size());
-        getLane();
+        //        cvtColor(frame, frame, CV_BGR2GRAY);
+
+        //        start = clock();
+        detect.nextFrame(frame);
+        //        stop =clock();
+        //         cout<<"fps : "<<1.0/(((double)(stop-start))/ CLOCKS_PER_SEC)<<endl;
+
+        int key=waitKey(33);
+        if(key==32){ //enter space to pause
+            key=waitKey(0);
+        }
+        else if(key==27 || (char)key=='q'){
+            break;
+        }
+        //        if(waitKey(10) == 27) //wait for 'esc' key press for 10 ms. If 'esc' key is pressed, break loop
+        //        {
+        //            cout<<"video paused!, press q to quit, any other key to continue"<<endl;
+        //            if(waitKey(0) == 'q')
+        //            {
+        //                cout << "terminated by user" << endl;
+        //                break;
+        //            }
+        //        }
     }
+}
 
-    Mat NightLaneDetect::getResult()
+void makeFromVid(string path)
+{
+    Mat frame;
+    VideoCapture cap(path); // open the video file for reading
+
+
+
+    if ( !cap.isOpened() )  // if not success, exit program
+        cout << "Cannot open the video file" << endl;
+
+    //cap.set(CV_CAP_PROP_POS_MSEC, 300); //start the video at 300ms
+
+    double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+    cout << "Input video's Frame per seconds : " << fps << endl;
+
+    cap.read(frame);
+    resize(frame,frame,Size(frame.cols/2,frame.rows/2));
+
+    NightLaneDetect detect(frame,0.6);
+
+    while(1)
     {
-        return temp2;
-    }
-
-    void makeFromFolder(string path){
-
-        vector<string> all_pics=getAllFilesWithPathFromDir(path);
-        std::sort(all_pics.begin(),all_pics.end(),less<string>());
-        Mat frame=imread(all_pics[0]);
-        NightLaneDetect detect(frame,0.4);
-
-        namedWindow("temp", 2);
-        namedWindow("temp2", 2);
-        //    imshow("lane",currFrame);
-        namedWindow("color-draw",2);
-
-
-        int idx=0;
-        while(1)
+        bool bSuccess = cap.read(frame); // read a new frame from video
+        if (!bSuccess)                   //if not success, break loop
         {
-            if(idx>=all_pics.size()){
-                idx=0;
-            }
-            frame=imread(all_pics[idx++]);
-
-            //        cvtColor(frame, frame, CV_BGR2GRAY);
-
-            //        start = clock();
-            detect.nextFrame(frame);
-            //        stop =clock();
-            //         cout<<"fps : "<<1.0/(((double)(stop-start))/ CLOCKS_PER_SEC)<<endl;
-
-            int key=waitKey(33);
-            if(key==32){ //enter space to pause
-                key=waitKey(0);
-            }
-            else if(key==27 || (char)key=='q'){
-                break;
-            }
-            //        if(waitKey(10) == 27) //wait for 'esc' key press for 10 ms. If 'esc' key is pressed, break loop
-            //        {
-            //            cout<<"video paused!, press q to quit, any other key to continue"<<endl;
-            //            if(waitKey(0) == 'q')
-            //            {
-            //                cout << "terminated by user" << endl;
-            //                break;
-            //            }
-            //        }
+            cout << "Cannot read the frame from video file" << endl;
+            break;
         }
-    }
 
-    void makeFromVid(string path)
-    {
-        Mat frame;
-        VideoCapture cap(path); // open the video file for reading
+        //        cvtColor(frame, frame, CV_BGR2GRAY);
 
 
+        //        start = clock();
+        detect.nextFrame(frame);
+        //        stop =clock();
+        //        cout<<"fps : "<<1.0/(((double)(stop-start))/ CLOCKS_PER_SEC)<<endl;
 
-        if ( !cap.isOpened() )  // if not success, exit program
-            cout << "Cannot open the video file" << endl;
-
-        //cap.set(CV_CAP_PROP_POS_MSEC, 300); //start the video at 300ms
-
-        double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
-        cout << "Input video's Frame per seconds : " << fps << endl;
-
-        cap.read(frame);
-        resize(frame,frame,Size(frame.cols/2,frame.rows/2));
-
-        NightLaneDetect detect(frame,0.6);
-
-        while(1)
+        int key=waitKey(10);
+        std::cout<<"key="<<key<<endl;
+        if(key == 27) //wait for 'esc' key press for 10 ms. If 'esc' key is pressed, break loop
         {
-            bool bSuccess = cap.read(frame); // read a new frame from video
-            if (!bSuccess)                   //if not success, break loop
-            {
-                cout << "Cannot read the frame from video file" << endl;
-                break;
-            }
 
-            //        cvtColor(frame, frame, CV_BGR2GRAY);
+            break;
 
-
-            //        start = clock();
-            detect.nextFrame(frame);
-            //        stop =clock();
-            //        cout<<"fps : "<<1.0/(((double)(stop-start))/ CLOCKS_PER_SEC)<<endl;
-
-            int key=waitKey(10);
-            std::cout<<"key="<<key<<endl;
-            if(key == 27) //wait for 'esc' key press for 10 ms. If 'esc' key is pressed, break loop
-            {
-
-                break;
-
-            }else if(key==32){ //space key
-                std::cout<<"pause=========="<<std::endl;
-                key=waitKey(0);//pause
-            }
+        }else if(key==32){ //space key
+            std::cout<<"pause=========="<<std::endl;
+            key=waitKey(0);//pause
         }
     }
+}
 
