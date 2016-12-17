@@ -42,6 +42,8 @@ public:
     bool isValid(){
 	return !((int)m==0 && (int)b==0);
     }
+
+    double getX(const double y);
 };
 
 

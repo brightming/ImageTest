@@ -151,3 +151,8 @@ void LeastSquare::print() const
     cout<<"y = "<<m<<"x + "<<b<<"\n";
 }
 
+double LeastSquare::getX(const double y)
+{
+    return (y-b)/m;
+}
+
