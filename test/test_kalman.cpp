@@ -89,7 +89,7 @@ void test_slope_track(){
     setIdentity(KF.measurementMatrix);                                             //测量矩阵H
     setIdentity(KF.processNoiseCov, Scalar::all(1e-5));                            //系统噪声方差矩阵Q
     setIdentity(KF.measurementNoiseCov, Scalar::all(1e-1));                        //测量噪声方差矩阵R
-    setIdentity(KF.errorCovPost, Scalar::all(1));                                  //后验错误估计协方差矩阵P
+    setIdentity(KF.errorCovPost, Scalar::all(1e-5));                                  //后验错误估计协方差矩阵P
     rng.fill(KF.statePost,RNG::UNIFORM,0,winHeight>winWidth?winWidth:winHeight);   //初始状态值x(0)
     Mat measurement = Mat::zeros(measureNum, 1, CV_32F);                           //初始测量值x'(0)，因为后面要更新这个值，所以必须先定义
 
@@ -200,7 +200,7 @@ void test_slope_track(){
 
 
         imshow("kalman", image);
-        int key=waitKey(500);
+        int key=waitKey(30);
         if (key==27){//esc
             break;
         }
