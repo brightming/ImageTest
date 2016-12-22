@@ -178,52 +178,54 @@ Mat test_ipm(Mat& inputImg){
 //    bird_pts.push_back(Point2f(1652,1080));
 
 
-    original_pts.push_back(Point2f(250,1080));
-    original_pts.push_back(Point2f(838,472));
-    original_pts.push_back(Point2f(940,472));
-    original_pts.push_back(Point2f(1652,1080));
-
-
-    bird_pts.push_back(Point2f(250,1080));
-    bird_pts.push_back(Point2f(250,472));
-    bird_pts.push_back(Point2f(1652,472));
-    bird_pts.push_back(Point2f(1652,1080));
 
 
 
-    vector<double> x;
-    vector<double> y;
-    x.push_back(250);
-    x.push_back(544);
-    y.push_back(1080);
-    y.push_back(776);
-    LeastSquare lsq_l(x,y);
-
-    double y2=0;
-    double x2=lsq_l.getX(0);
-    line(inputImg,Point(544,776),Point(x2,y2),Scalar(255,0,0),1);
+    bird_pts.push_back(Point2f(0,0));
+    bird_pts.push_back(Point2f(1,0));
+    bird_pts.push_back(Point2f(1,1));
+    bird_pts.push_back(Point2f(0,1));
 
 
-    vector<double> xr;
-    vector<double> yr;
-    xr.push_back(1296);
-    xr.push_back(1652);
-    yr.push_back(776);
-    yr.push_back(1080);
-    LeastSquare lsq_r(xr,yr);
-
-    double y2r=0;
-    double x2r=lsq_r.getX(y2r);
-
-    line(inputImg,Point(1296,776),Point(x2r,y2r),Scalar(255,0,0),1);
+    original_pts.push_back(Point2f(820,775));
+    original_pts.push_back(Point2f(1223,775));
+    original_pts.push_back(Point2f(1730,986));
+    original_pts.push_back(Point2f(577,986));
 
 
-    double y_h=1080-2*(1080-776);
-   line(inputImg,Point(0,y_h),Point(1920,y_h),Scalar(255,2,0),1);
+//    vector<double> x;
+//    vector<double> y;
+//    x.push_back(250);
+//    x.push_back(544);
+//    y.push_back(1080);
+//    y.push_back(776);
+//    LeastSquare lsq_l(x,y);
 
-   double xl_h=lsq_l.getX(y_h);
-   double xr_h=lsq_r.getX(y_h);
-   cout<<"y_h="<<y_h<<",xl_h="<<xl_h<<",xr_h="<<xr_h<<endl;
+//    double y2=0;
+//    double x2=lsq_l.getX(0);
+//    line(inputImg,Point(544,776),Point(x2,y2),Scalar(255,0,0),1);
+
+
+//    vector<double> xr;
+//    vector<double> yr;
+//    xr.push_back(1296);
+//    xr.push_back(1652);
+//    yr.push_back(776);
+//    yr.push_back(1080);
+//    LeastSquare lsq_r(xr,yr);
+
+//    double y2r=0;
+//    double x2r=lsq_r.getX(y2r);
+
+//    line(inputImg,Point(1296,776),Point(x2r,y2r),Scalar(255,0,0),1);
+
+
+//    double y_h=1080-2*(1080-776);
+//   line(inputImg,Point(0,y_h),Point(1920,y_h),Scalar(255,2,0),1);
+
+//   double xl_h=lsq_l.getX(y_h);
+//   double xr_h=lsq_r.getX(y_h);
+//   cout<<"y_h="<<y_h<<",xl_h="<<xl_h<<",xr_h="<<xr_h<<endl;
 
 
     Mat outputImg;
@@ -234,18 +236,19 @@ Mat test_ipm(Mat& inputImg){
     int height=inputImg.rows;
 
 
-    IPM ipm( Size(width, height), Size(width, height), original_pts, bird_pts );
-    ipm.applyHomography( inputImg, outputImg );
+//    IPM ipm( Size(width, height), Size(width, height), original_pts, bird_pts );
+//    ipm.applyHomography( inputImg, outputImg );
 
-    ipm.drawPoints(original_pts, inputImg );
+//    ipm.drawPoints(original_pts, inputImg );
 
 
-//    Mat H,H2;
+    Mat H,H2;
 //    H=findHomography(original_pts,bird_pts,CV_RANSAC);
-//    H2=getPerspectiveTransform(bird_pts,original_pts);
+    H2=getPerspectiveTransform(bird_pts,original_pts);
 //    cout<<"H="<<H<<endl;
-//    cout<<"H2="<<H2<<endl;
-//    warpPerspective(inputImg,outputImg,H2.inv(),Size(width,height),CV_INTER_LINEAR+/*CV_WARP_INVERSE_MAP+*/CV_WARP_FILL_OUTLIERS);
+    cout<<"H2="<<H2<<endl;
+    H2.at<double>(2,2)=10;
+    warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
 
 //    cout<<"outputImg.width="<<outputImg.cols<<",outputImg.height="<<outputImg.rows<<endl;
 
@@ -295,7 +298,7 @@ int main(){
     namedWindow("dst_image",2);
     namedWindow("gray",2);
 
-    string path="/home/gumh/tmp/highway";
+    string path="/home/gumh/Videos/hw2";
     vector<string> all_pics=getAllFilesWithPathFromDir(path);
     std::sort(all_pics.begin(),all_pics.end(),less<string>());
 
@@ -310,7 +313,7 @@ int main(){
         Mat inputImg=imread(all_pics[idx]);
         Mat ipm_pict=test_ipm(inputImg);
 
-        test_template_match(ipm_pict);
+//        test_template_match(ipm_pict);
 
 
         int key=waitKey(33);
