@@ -35,8 +35,8 @@ int high_threshold = 150;
 // Region-of-interest vertices
 //We want a trapezoid shape, with bottom edge at the bottom of the image
 float trap_bottom_width = 1 ;// # width of bottom edge of trapezoid, expressed as percentage of image width
-float trap_top_width = 0.5;//0.07 ;// # ditto for top edge of trapezoid
-float trap_height = 0.5 ;// # height of the trapezoid expressed as percentage of image height
+float trap_top_width = 1;//0.07 ;// # ditto for top edge of trapezoid
+float trap_height = 0.75 ;// # height of the trapezoid expressed as percentage of image height
 
 //Hough Transform
 int rho = 2;// # distance resolution in pixels of the Hough grid
@@ -47,13 +47,13 @@ int min_line_length = 20 ;//#minimum number of pixels making up a line
 int max_line_gap = 10	;//# maximum gap in pixels between connectable line segments
 
 //for valid line slope
-float min_left_slope=35;
+float min_left_slope=15;
 float max_left_slope=80;
-float min_right_slope=35;
+float min_right_slope=15;
 float max_right_slope=80;
 
-Scalar default_white_color(200,200,200);
-Scalar default_yellow_color(93,218,248);
+Scalar default_white_color(200,229,236);
+Scalar default_yellow_color(137,202,231);
 
 
 #define DEBUG_SHOW

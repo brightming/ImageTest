@@ -44,6 +44,13 @@ public:
     }
 
     double getX(const double y);
+
+    double get_dist(double x,double y){
+	if(m!=0)
+	    return (m*x-y+b)/m>0?(m*x-y+b)/m:(-1)*(m*x-y+b)/m;
+	else
+	    return (b-y)>0?b-y:y-b;
+    }
 };
 
 

@@ -14,8 +14,8 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	//Read a single-channel image
-    //const char* filename = "imageText.jpg";
-    Mat srcImg = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    const char* filename = "/home/gumh/Pictures/mmexport1482203528148.jpg";
+    Mat srcImg = imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
 	if(srcImg.empty())
 		return -1;
 	imshow("source", srcImg);

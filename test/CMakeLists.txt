@@ -3,7 +3,7 @@
 aux_source_directory(./ src_lists)
 message(STATUS "-----test srcs:${src_lists}")
 
-set(need_srcs "test_homography;test_ipm;test_kalman;test_ransac_match")
+set(need_srcs "test_width_lane;test_kalman;test_ransac;test_clear_text")
 list(APPEND need_srcs "test_lane_detect")
 list(APPEND need_srcs "test_nightlane_detect")
 list(APPEND need_srcs "test_CubicSplineInterpolation")
