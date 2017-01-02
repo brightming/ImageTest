@@ -1506,6 +1506,7 @@ void makeFromVid(string path)
             break;
         }
 
+
         //        cvtColor(frame, frame, CV_BGR2GRAY);
 
 
