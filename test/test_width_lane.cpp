@@ -6,13 +6,15 @@ using namespace std;
 clock_t start, stop;
 
 
-void ransac_fit(Mat& binary_pict,Mat& consensus_mat){
+void ransac_fit(Mat& binary_pict){//,Mat& consensus_mat){
+
+
     vector<Point> all_pts;
     cv::findNonZero(binary_pict,all_pts);
 
-    cout<<"all_pts.size="<<all_pts.size()<<endl;
+//    cout<<"all_pts.size="<<all_pts.size()<<endl;
 
-    int max_iter=1000;
+    int max_iter;
     float max_dist=10;
     float best_distance=binary_pict.cols*binary_pict.rows;
     int max_x=binary_pict.cols;
@@ -29,9 +31,10 @@ void ransac_fit(Mat& binary_pict,Mat& consensus_mat){
     vector<int> in_set_idx;
     vector<Point> outlier_pts;
 
+    vector<Vec3f> maybe_good_models;
 
     //verify line
-    max_iter=1000;
+    max_iter=100;
     allow_dist=max_dist;
     consensus_pts.resize(0);
     tmp_pts.resize(0);
@@ -56,7 +59,7 @@ void ransac_fit(Mat& binary_pict,Mat& consensus_mat){
 
 
 //            cout<<"--very line--"<<endl;
-        consensus_pts.resize(0);
+        tmp_pts.resize(0);
         bool agree=verify_line(in_set_pts,outlier_pts,allow_dist,min_cnt,get_m,get_b,get_dist,tmp_pts);
         if(agree && get_dist<best_distance){
             best_distance=get_dist;
@@ -70,59 +73,90 @@ void ransac_fit(Mat& binary_pict,Mat& consensus_mat){
             for(int i=0;i<in_set_pts.size();i++){
                 seed_pts.push_back(in_set_pts[i]);
             }
+//            cout<<"get_dist="<<get_dist<<endl;
+            if(get_dist<allow_dist/2){
+                maybe_good_models.push_back(Vec3f(get_m,get_b,get_dist));
+            }
+
+            if(best_distance<allow_dist/3){
+                cout<<"get very best point.break;"<<endl;
+                break;
+            }
         }
     }
 
-    cout<<"min_cnt="<<min_cnt<<",allow_dist="<<allow_dist<<",best_m="<<best_m<<",best_b="<<best_b<<",consensus_pts.size="<<consensus_pts.size()<<endl;
+    cout<<"best_distance="<<best_distance<<",min_cnt="<<min_cnt<<",allow_dist="<<allow_dist<<",best_m="<<best_m<<",best_b="<<best_b<<",consensus_pts.size="<<consensus_pts.size()<<endl;
 
+//    cout<<"maybe_good_models.size="<<maybe_good_models.size()<<endl;
+//    for(int i=0;i<maybe_good_models.size();i++){
+//        cout<<"get-dist="<<maybe_good_models[i][2]
+//           <<",get_m="<<maybe_good_models[i][0]
+//          <<",get-b="<<maybe_good_models[i][1]
+//         <<endl;
+//    }
 
     char name[64];
 
     //draw points
-    for(Point p:consensus_pts){
-        consensus_mat.at<Vec3b>(p.y,p.x)[0]=255;
-        consensus_mat.at<Vec3b>(p.y,p.x)[1]=255;
-        consensus_mat.at<Vec3b>(p.y,p.x)[2]=255;
-    }
+//    for(Point p:consensus_pts){
+//        consensus_mat.at<Vec3b>(p.y,p.x)[0]=255;
+//        consensus_mat.at<Vec3b>(p.y,p.x)[1]=255;
+//        consensus_mat.at<Vec3b>(p.y,p.x)[2]=255;
+//    }
 
 
-    //draw line
-    LeastSquare lsq;
-    lsq.setM(best_m);
-    lsq.setB(best_b);
-    Point p1(max_x/2,(int)lsq.getY(max_x/2));
-    Point p2((int)lsq.getX(max_y),max_y);
+    //draw all line
+//    for(int i=0;i<maybe_good_models.size();i++){
+//        LeastSquare lsq;
+//        lsq.setM(maybe_good_models[i][0]);
+//        lsq.setB(maybe_good_models[i][1]);
+//        Point p1(max_x/2,(int)lsq.getY(max_x/2));
+//        Point p2((int)lsq.getX(max_y),max_y);
 
-    cout<<"p1=("<<p1.x<<","<<p1.y<<")"<<endl;
-    cout<<"p2=("<<p2.x<<","<<p2.y<<")"<<endl;
+//        cout<<"p1=("<<p1.x<<","<<p1.y<<")"<<endl;
+//        cout<<"p2=("<<p2.x<<","<<p2.y<<")"<<endl;
+
+//        line(binary_pict,p1,p2,Scalar(255),2); //蓝色表示预测图
+//        line(consensus_mat,p1,p2,Scalar(255,0,0),1); //蓝色表示预测图
+//    }
+
+    //draw best line
+    LeastSquare lsq_best;
+    lsq_best.setM(best_m);
+    lsq_best.setB(best_b);
+    Point p1(0,(int)lsq_best.getY(0));
+    Point p2(max_x-1,(int)lsq_best.getY(max_x-1));
+
+//    cout<<"p1=("<<p1.x<<","<<p1.y<<")"<<endl;
+//    cout<<"p2=("<<p2.x<<","<<p2.y<<")"<<endl;
 
     line(binary_pict,p1,p2,Scalar(255),2); //蓝色表示预测图
+//    line(consensus_mat,p1,p2,Scalar(255,0,0),1); //蓝色表示预测图
 
-    line(consensus_mat,p1,p2,Scalar(255,0,0),1); //蓝色表示预测图
     {
         vector<double> x;
         vector<double> y;
-        for(int i=0;i<seed_pts.size();i++){
-            //初始选择的点，得到的直线
-            x.push_back(seed_pts[i].x);
-            y.push_back(seed_pts[i].y);
+//        for(int i=0;i<seed_pts.size();i++){
+//            //初始选择的点，得到的直线
+//            x.push_back(seed_pts[i].x);
+//            y.push_back(seed_pts[i].y);
 
-            std::cout<<"seed_pt-"<<i<<"=("<<seed_pts[i].x<<","<<seed_pts[i].y<<")"<<endl;
-            circle(consensus_mat,seed_pts[i],20,Scalar(0,0,255),1);
+//            std::cout<<"seed_pt-"<<i<<"=("<<seed_pts[i].x<<","<<seed_pts[i].y<<")"<<endl;
+//            circle(consensus_mat,seed_pts[i],20,Scalar(0,0,255),1);
 
-        }
+//        }
         LeastSquare seed_lsq(x,y);
         Point seed_p1(0,(int)seed_lsq.getY(0));
         Point seed_p2((int)seed_lsq.getX(0),0);
-        line(consensus_mat,seed_p1,seed_p2,Scalar(0,0,255),1);
+//        line(consensus_mat,seed_p1,seed_p2,Scalar(0,0,255),1);
 
-        for(int i=0;i<consensus_pts.size();i++){
-            float dist=seed_lsq.get_dist(consensus_pts[i].x,consensus_pts[i].y);
-            if(dist>allow_dist){
-                sprintf(name,"%f",dist);
-                cv::putText(consensus_mat,name,consensus_pts[i],CV_FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,255,0));
-            }
-        }
+//        for(int i=0;i<consensus_pts.size();i++){
+//            float dist=seed_lsq.get_dist(consensus_pts[i].x,consensus_pts[i].y);
+//            if(dist>allow_dist){
+//                sprintf(name,"%f",dist);
+//                cv::putText(consensus_mat,name,consensus_pts[i],CV_FONT_HERSHEY_SIMPLEX,0.5,Scalar(0,255,0));
+//            }
+//        }
 
     }
 
@@ -155,7 +189,9 @@ void makeFromVid(string path)
     }
     int loop=3;
 
-    WidthLane lanedetect(frame);
+    WidthLaneDetector lanedetect(frame);
+
+    int width,height;
 
     while(1)
     {
@@ -165,10 +201,13 @@ void makeFromVid(string path)
             cout << "Cannot read the frame from video file" << endl;
             break;
         }
-        imwrite("/home/fung/test.png",frame);
+//        imwrite("/home/gumh/Videos/hubei.png",frame);
+//        break;
         start = clock();
 
-        lanedetect.SetVanishPt(frame.rows*0.45);
+//        imshow("frame",frame);
+//        waitKey(0);
+        lanedetect.SetVanishPt(frame.rows*0.65);
         lanedetect.SetROI();
         lanedetect.ROIPreprocess();
         lanedetect.GaussianFitler();
@@ -178,9 +217,22 @@ void makeFromVid(string path)
 
 
 
-//        ransac_fit(lanedetect.templateFrame_pers_,frame);
+        width=lanedetect.templateFrame_pers_.cols;
+        height=lanedetect.templateFrame_pers_.rows;
+
+//        line(lanedetect.templateFrame_pers_,Point(width/2,0),Point(width/2,height),Scalar(255),5);
+
+        //left side
+        Mat left_part=lanedetect.templateFrame_pers_(Rect(681,0,225,height));
+        Mat right_part=lanedetect.templateFrame_pers_(Rect(1044,0,315,height));
+
+//        ransac_fit(left_part);
+//        ransac_fit(right_part);
+
+        ransac_fit(lanedetect.templateFrame_pers_);
 
          imshow("ContoursPers",lanedetect.templateFrame_pers_);
+
 
 //        imshow("MaskFrame",lanedetect.MaskFrame_);
 //        lanedetect.InversePerspectiveTrans(lanedetect.templateFrame_pers_);
@@ -236,13 +288,15 @@ void makeFromVid(string path)
             }
         }else if(forwardkey==27){
             break;
+        }else if(forwardkey==32){
+            waitKey(0);
         }
     }
 }
 
 
 int main(){
-        makeFromVid("/home/gumh/Videos/hi3519sn10_20161201-152930-205.mp4");
+        makeFromVid("/home/gumh/Videos/2016_12_22卡车驾驶室内拍路面视频/20161222_IMG_8571.MOV");
 
 //    makeFromVid("/home/fung/Desktop/2016_12_22/20161222_IMG_8571.MOV");
 //    Mat frame;

@@ -12,9 +12,14 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 set(CMAKE_BUILD_TYPE "DEBUG")
 
 #opencv
-#set(OpenCV_DIR /home/gumh/OpenSource/opencv-3.1.0/build_with_contri)
-set(OpenCV_DIR /home/gumh/OpenSource/opencv-2.4.13/build)
-set(CMAKE_PREFIX_PATH /home/gumh/OpenSource/opencv-2.4.9/build)
+set(opencv_version 3)
+if(${opencv_version} STREQUAL 3)
+    set(OpenCV_DIR /home/gumh/OpenSource/opencv-3.2.0/build)
+    set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -DOPENCV_VERSION3")
+else()
+    set(OpenCV_DIR /home/gumh/OpenSource/opencv-2.4.13/build)
+endif()
+#set(CMAKE_PREFIX_PATH /home/gumh/OpenSource/opencv-2.4.9/build)
 find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})

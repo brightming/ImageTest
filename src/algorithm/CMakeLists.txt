@@ -1,0 +1,5 @@
+project(algorithm)
+aux_source_directory(. SRC_LIST)
+add_library(${PROJECT_NAME} ${SRC_LIST})
+list(INSERT MY_LINKER_LIBS 0 ${PROJECT_NAME})
+set(MY_LINKER_LIBS ${MY_LINKER_LIBS} PARENT_SCOPE)

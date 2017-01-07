@@ -9,7 +9,7 @@
 
 #include "lane/road_detector.h"
 
-class WidthLane :public LaneDetector{
+class WidthLaneDetector :public LaneDetector{
 public:
     cv::Mat currFrame_;
     cv::Mat ROIFrame_;
@@ -55,7 +55,7 @@ public:
     cv::RotatedRect rotated_rect_;
 
 public:
-    WidthLane(cv::Mat startFrame);
+    WidthLaneDetector(cv::Mat startFrame);
     void SetVanishPt(int vp);
     void SetROI();           //ROI设定
     void ROIPreprocess();    //ROI预处理

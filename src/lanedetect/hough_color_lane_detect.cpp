@@ -650,6 +650,7 @@ Mat weighted_img(Mat &img,Mat& initial_img,float alpha=0.8, float belta=1., floa
 
 
 int hough_color_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
+#ifndef OPENCV_VERSION3
     std::cout<<"----hough_color_detect_img_c begin--"<<std::endl;
 
     if(lines==NULL){
@@ -679,6 +680,9 @@ int hough_color_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
 
     }
     return lines->used;
+#else
+    return 0;
+#endif
 }
 
 

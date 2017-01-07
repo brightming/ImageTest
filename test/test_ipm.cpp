@@ -247,7 +247,7 @@ Mat test_ipm(Mat& inputImg){
     H2=getPerspectiveTransform(bird_pts,original_pts);
 //    cout<<"H="<<H<<endl;
     cout<<"H2="<<H2<<endl;
-    H2.at<double>(2,2)=10;
+    H2.at<double>(2,2)=5;
     warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
 
 //    cout<<"outputImg.width="<<outputImg.cols<<",outputImg.height="<<outputImg.rows<<endl;
@@ -280,6 +280,8 @@ Mat test_ipm(Mat& inputImg){
 
     // View
     imshow("Input", inputImg);
+
+    flip(outputImg,outputImg,1);
     imshow("Output", outputImg);
 //    imshow("invert",inverse_pict);
 
@@ -293,14 +295,52 @@ Mat test_ipm(Mat& inputImg){
 
 
 int main(){
-    namedWindow("Input",2);
-    namedWindow("Output",2);
+    namedWindow("input",2);
+    namedWindow("output",2);
     namedWindow("dst_image",2);
     namedWindow("gray",2);
 
-    string path="/home/gumh/Videos/hw2";
-    vector<string> all_pics=getAllFilesWithPathFromDir(path);
-    std::sort(all_pics.begin(),all_pics.end(),less<string>());
+
+//    //floor1 左上->右上->右下->左下
+//    int book_pict_point_x[]={768,2324,2857,324};
+//    int book_pict_point_y[]={1812,1793,2951,3009};
+
+//    int book_bird_point_x[]={0,200,200,0};
+//    int book_bird_point_y[]={0,0,200,200};
+
+    //climb.jpg
+    int book_pict_point_x[]={744,960,1551,119};
+    int book_pict_point_y[]={495,495,1079,1079};
+
+    int book_bird_point_x[]={0,2,2,0};
+    int book_bird_point_y[]={0,0,6,6};
+
+    vector<Point2f>  original_pts,bird_pts;
+
+    bird_pts.push_back(Point2f(book_bird_point_x[0],book_bird_point_y[0]));
+    bird_pts.push_back(Point2f(book_bird_point_x[1],book_bird_point_y[1]));
+    bird_pts.push_back(Point2f(book_bird_point_x[2],book_bird_point_y[2]));
+    bird_pts.push_back(Point2f(book_bird_point_x[3],book_bird_point_y[3]));
+
+    original_pts.push_back(Point2f(book_pict_point_x[0],book_pict_point_y[0]));
+    original_pts.push_back(Point2f(book_pict_point_x[1],book_pict_point_y[1]));
+    original_pts.push_back(Point2f(book_pict_point_x[2],book_pict_point_y[2]));
+    original_pts.push_back(Point2f(book_pict_point_x[3],book_pict_point_y[3]));
+
+
+
+
+    Mat outputImg;
+
+
+
+
+//    string path="/home/gumh/Videos/challenge/";
+//    vector<string> all_pics=getAllFilesWithPathFromDir(path);
+//    std::sort(all_pics.begin(),all_pics.end(),less<string>());
+
+    vector<string> all_pics;
+    all_pics.push_back("/home/gumh/Videos/climb.jpg");
 
     int idx=0;
     while(1)
@@ -310,19 +350,58 @@ int main(){
         }
 
 
-        Mat inputImg=imread(all_pics[idx]);
-        Mat ipm_pict=test_ipm(inputImg);
+        Mat inputImg=imread(all_pics[idx]); 
+        // IPM object
+        int width=inputImg.cols;
+        int height=inputImg.rows;
+
+
+        Mat H,H2;
+        H2=getPerspectiveTransform(bird_pts,original_pts);
+        cout<<"H2="<<H2<<endl;
+        H2.at<double>(2,2)=35;
+        warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
+
+        flip(outputImg,outputImg,1);
+        flip(outputImg,outputImg,0);
+
+        imshow("output", outputImg);
+        imshow("input", inputImg);
+
+
 
 //        test_template_match(ipm_pict);
 
 
-        int key=waitKey(33);
-        if(key==32){ //enter space to pause
-            key=waitKey(0);
-        }
-        else if(key==27 || (char)key=='q'){
-            break;
-        }
+        char key=waitKey(0);
+        while(key != 27) {
+             if(key=='u'){
+                 H2.at<double>(2,2)=H2.at<double>(2,2)*1.1;
+             }else if(key=='d'){
+                 H2.at<double>(2,2)=H2.at<double>(2,2)/1.1;
+             }
+             warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
+
+             cout<<"H2="<<H2<<endl;
+
+             flip(outputImg,outputImg,1);
+             flip(outputImg,outputImg,0);
+
+             imshow("output", outputImg);
+
+
+             key=waitKey(0);
+         }
+//        if(key==32){ //enter space to pause
+//            key=waitKey(0);
+//        }
+//        else if(key==27 || (char)key=='q'){
+//            break;
+//        }
+
+        if(key==27 || (char)key=='q'){
+                    break;
+                }
 
         idx++;
 
@@ -477,6 +556,11 @@ int main2(int argc, char* argv[]) {
     //
 
     cvRemap( t, image, mapx, mapy );
+
+     cvShowImage( "Chessboard1", image );
+     waitKey(0);
+
+
     // GET THE CHESSBOARD ON THE PLANE
     //
 
@@ -632,6 +716,10 @@ int main2(int argc, char* argv[]) {
                     H,
                     CV_INTER_LINEAR | CV_WARP_INVERSE_MAP | CV_WARP_FILL_OUTLIERS
                     );
+
+        cvFlip(birds_image,birds_image,1);
+        cvFlip(birds_image,birds_image,0);
+
         cvShowImage( "Birds_Eye", birds_image );
         //    imwrite("/home/lee/bird.jpg", birds_image);
 
@@ -640,4 +728,45 @@ int main2(int argc, char* argv[]) {
         if(key == 'd') Z -= 0.5;
     }
     return 0;
+}
+
+
+int main3(){
+
+    vector<Point2f> ori_pts;
+
+
+    ori_pts.push_back(Point2f(0,0));
+    ori_pts.push_back(Point2f(3,0));
+    ori_pts.push_back(Point2f(3,5));
+    ori_pts.push_back(Point2f(0,5));
+
+
+    vector<Point2f> pict_pts;
+    pict_pts.push_back(Point2f(225,256));
+    pict_pts.push_back(Point2f(326,256));
+    pict_pts.push_back(Point2f(388,418));
+    pict_pts.push_back(Point2f(101,418));
+
+
+
+
+    Mat H,H2;
+    H2=getPerspectiveTransform(ori_pts,pict_pts);
+    cout<<"H2="<<H2<<endl;
+    H2.at<double>(2,2)=20;
+
+
+    Mat inputImg=imread("/home/gumh/Videos/chess.png");
+    Mat outputImg;
+    int width=inputImg.cols;
+    int height=inputImg.rows;
+
+    warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
+
+    imshow("input",inputImg);
+    imshow("output",outputImg);
+
+    waitKey(0);
+
 }

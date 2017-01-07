@@ -34,6 +34,7 @@ clock_t start, stop;
 NightLaneDetect *night_lane_detector;
 
 int night_lane_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
+#ifndef OPENCV_VERSION3
     Mat frame(shrink,false);
     if(night_lane_detector==NULL){
         night_lane_detector=new NightLaneDetect(frame);
@@ -57,6 +58,9 @@ int night_lane_detect_img_c(IplImage *shrink,vec4i_c *lines,int draw_lines){
         //        imshow("mask-----",mask);
         //        imshow("frame111",frame);
     }
+#else
+    return 0;
+#endif
 
 }
 
@@ -349,7 +353,7 @@ void NightLaneDetect::OptimizePolyfit(){
             left_input_y.at<float>(i,0)=left_ps[i].y;
         }
 
-        polyfit(left_input_x,left_input_y,left_dst,order);
+//        my_polyfit(left_input_x,left_input_y,left_dst,order);
         vector<Point> dst_left_ps;
         for(int r=0;r<for_draw.cols/2;r+=10){
             float y=0;
@@ -383,7 +387,7 @@ void NightLaneDetect::OptimizePolyfit(){
             right_input_y.at<float>(i,0)=right_ps[i].y;
         }
 
-        polyfit(right_input_x,right_input_y,right_dst,order);
+//        my_polyfit(right_input_x,right_input_y,right_dst,order);
         vector<Point> dst_right_ps;
         for(int r=for_draw.cols/2;r<for_draw.cols;r+=10){
             float y=0;

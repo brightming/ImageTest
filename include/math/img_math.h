@@ -57,7 +57,7 @@ public:
 
 
 
-void polyfit(int n, double *x, double *y, int poly_n, double p[]);
+void my_polyfit(int n, double *x, double *y, int poly_n, double p[]);
 void gauss_solve(int n,double A[],double x[],double b[]);
 
 

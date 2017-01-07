@@ -1,11 +1,12 @@
 project(ImageTest)
 
 add_subdirectory(common)
+add_subdirectory(algorithm)
 add_subdirectory(distance)
 add_subdirectory(lanedetect)
 add_subdirectory(lane)
 add_subdirectory(ipm)
-#add_subdirectory(hist)
+add_subdirectory(bspline)
 #add_subdirectory(chapter2)
 #add_subdirectory(CHEVP)
 

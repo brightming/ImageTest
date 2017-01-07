@@ -177,7 +177,7 @@ int main(){
         cout<<"all_pts.size="<<all_pts.size()<<endl;
 
         //verify line
-        max_iter=2000;
+        max_iter=100;
         best_distance=max_x*max_y;
         allow_dist=max_dist;
         consensus_pts.resize(0);
@@ -203,7 +203,7 @@ int main(){
 
 
 //            cout<<"--very line--"<<endl;
-            consensus_pts.resize(0);
+            tmp_pts.resize(0);
             bool agree=verify_line(in_set_pts,outlier_pts,allow_dist,min_cnt,get_m,get_b,get_dist,tmp_pts);
             if(agree && get_dist<best_distance){
                 best_distance=get_dist;

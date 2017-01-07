@@ -1,6 +1,6 @@
 #include "lane/width_lane.h"
 
-WidthLane::WidthLane(cv::Mat startFrame){
+WidthLaneDetector::WidthLaneDetector(cv::Mat startFrame){
     this->currFrame_ = startFrame;
     this->subROI_w = 0.2*this->currFrame_.cols;
     this->maxLaneWidth_  = 90;//70;//12;  //最大车道线宽度
@@ -17,12 +17,12 @@ WidthLane::WidthLane(cv::Mat startFrame){
     this->template_rows_pers_ = 20; //template过滤 透视变换模板行数
 }
 
-void WidthLane::SetVanishPt(int vp){
+void WidthLaneDetector::SetVanishPt(int vp){
     this->vanishingPt_ = vp;
     this->ROIrows_ = this->currFrame_.rows - this->vanishingPt_;   //rows in region of interest
 }
 
-void WidthLane::SetROI(){
+void WidthLaneDetector::SetROI(){
     this->OutFrame_ = this->currFrame_.clone();
     this->ROIFrame_ = this->currFrame_(cv::Rect(0,this->vanishingPt_,this->currFrame_.cols,
                                               this->currFrame_.rows-this->vanishingPt_));
@@ -36,17 +36,17 @@ void WidthLane::SetROI(){
     this->contoursFrame_ = cv::Scalar::all(0);
 }
 
-void WidthLane::ROIPreprocess(){
+void WidthLaneDetector::ROIPreprocess(){
     this->PerspectiveTrans(this->ROIFrame_);
     cv::cvtColor(this->ROIFrame_, this->ROIFrame_, CV_BGR2GRAY);
 //    cv::equalizeHist(this->ROIFrame_, this->ROIFrame_);
 }
 
-void WidthLane::GaussianFitler(){
+void WidthLaneDetector::GaussianFitler(){
     cv::GaussianBlur(this->ROIFrame_, this->ROIFrame_, cv::Size(9, 9), 2, 2);
 }
 
-void WidthLane::MarkLane(cv::Mat &src){
+void WidthLaneDetector::MarkLane(cv::Mat &src){
     this->binary_image_ = cv::Scalar::all(0);
     for(int i=0; i<src.rows; i++)
     {
@@ -68,7 +68,7 @@ void WidthLane::MarkLane(cv::Mat &src){
     imshow("MarkLane",this->binary_image_);
 }
 
-void WidthLane::MarkLanePers(cv::Mat &src){
+void WidthLaneDetector::MarkLanePers(cv::Mat &src){
     this->binary_image_pers_ = cv::Scalar::all(0);
     for(int i=0; i<src.rows; i++)
     {
@@ -90,7 +90,7 @@ void WidthLane::MarkLanePers(cv::Mat &src){
     imshow("MarkLanePers",this->binary_image_pers_);
 }
 
-void WidthLane::KernalFilter(){
+void WidthLaneDetector::KernalFilter(){
     this->binary_image_ = cv::Scalar::all(0);
 
     cv::Mat kmat;
@@ -138,7 +138,7 @@ void WidthLane::KernalFilter(){
 //    imshow("kmat",kmat);
 }
 
-void WidthLane::KernalFilterPers(){
+void WidthLaneDetector::KernalFilterPers(){
     this->binary_image_pers_ = cv::Scalar::all(0);
 
     this->laneWidth_ = this->maxLaneWidth_pers_;
@@ -182,7 +182,7 @@ void WidthLane::KernalFilterPers(){
 //    imshow("KernalFilterPers",this->binary_image_pers_);
 }
 
-void WidthLane::TemplateFilter(cv::Mat &src){
+void WidthLaneDetector::TemplateFilter(cv::Mat &src){
     int len_black,len_white,thres,score;
     cv::Mat templ_filter;
 
@@ -234,7 +234,7 @@ void WidthLane::TemplateFilter(cv::Mat &src){
     templ_out.copyTo(templateFrame_);
 }
 
-void WidthLane::TemplateFilterPers(cv::Mat &src){
+void WidthLaneDetector::TemplateFilterPers(cv::Mat &src){
     int len_black,len_white,thres,score;
     len_white = this->maxLaneWidth_pers_*0.9;//10;
     len_black = 0.25*len_white;//4;
@@ -281,7 +281,7 @@ void WidthLane::TemplateFilterPers(cv::Mat &src){
     templ_img.copyTo(templateFrame_pers_);
 }
 
-void WidthLane::ContoursComputePers(cv::Mat &src,cv::Mat& dst, cv::Scalar sc){
+void WidthLaneDetector::ContoursComputePers(cv::Mat &src,cv::Mat& dst, cv::Scalar sc){
     cv::findContours(src, this->contours_,this->hierarchy_,
                  CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
@@ -334,7 +334,7 @@ void WidthLane::ContoursComputePers(cv::Mat &src,cv::Mat& dst, cv::Scalar sc){
     }
 }
 
-void WidthLane::FindNonZeroFill(cv::Mat &src, uchar val){
+void WidthLaneDetector::FindNonZeroFill(cv::Mat &src, uchar val){
     for(int i=0; i<src.rows;i++){
         for(int j=0; j<src.cols; j++){
             if(src.at<uchar>(i,j)>0)
@@ -344,7 +344,7 @@ void WidthLane::FindNonZeroFill(cv::Mat &src, uchar val){
 }
 
 
-void WidthLane::PerspectiveTrans(cv::Mat &src){
+void WidthLaneDetector::PerspectiveTrans(cv::Mat &src){
     std::vector<cv::Point> not_a_rect_shape;
     not_a_rect_shape.push_back(cv::Point(0,0));
     not_a_rect_shape.push_back(cv::Point(src.cols,0));
@@ -369,10 +369,11 @@ void WidthLane::PerspectiveTrans(cv::Mat &src){
 //    dst_vertices[3] = cv::Point(775,src.rows);
     cv::Mat warpMatrix = cv::getPerspectiveTransform(src_vertices, dst_vertices);
     cv::warpPerspective(src, src, warpMatrix, src.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT);
-    //    imshow( "warp perspective",src);
+        imshow( "warp perspective",src);
+        cv::waitKey(0);
 }
 
-void WidthLane::InversePerspectiveTrans(cv::Mat &src){
+void WidthLaneDetector::InversePerspectiveTrans(cv::Mat &src){
     std::vector<cv::Point> not_a_rect_shape;
     not_a_rect_shape.push_back(cv::Point(0,0));
     not_a_rect_shape.push_back(cv::Point(src.cols,0));
@@ -397,7 +398,7 @@ void WidthLane::InversePerspectiveTrans(cv::Mat &src){
     //    imshow( "warp inverse perspective",src);
 }
 
-void WidthLane::AutoCanny(cv::Mat &src, float type){
+void WidthLaneDetector::AutoCanny(cv::Mat &src, float type){
 /*------------判定是否CV_8UC1------------*/
     if (src.type() != CV_8UC1)
         CV_Error(CV_StsUnsupportedFormat, "");
