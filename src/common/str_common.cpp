@@ -175,6 +175,12 @@ int compareIgnoreCase(const string& str1,const string& str2){
 	return s1.compare(s2);
 }
 
+bool fileExists(const char *fileName)
+{
+    ifstream infile(fileName);
+    return infile.good();
+}
+
 /**
  * format time info into char buffer
  */

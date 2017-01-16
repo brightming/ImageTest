@@ -3,7 +3,7 @@
 aux_source_directory(./ src_lists)
 message(STATUS "-----test srcs:${src_lists}")
 
-set(need_srcs "test_opencv3_seg")
+set(need_srcs "bbox_label_tool")
 #list(APPEND need_srcs "test_lane_detect")
 #list(APPEND need_srcs "test_nightlane_detect")
 #list(APPEND need_srcs "test_CubicSplineInterpolation")

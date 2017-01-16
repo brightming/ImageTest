@@ -293,27 +293,39 @@ Mat test_ipm(Mat& inputImg){
 
 
 
+void mouseHandler_ipm(int event, int x, int y, int flags, void* data_ptr)
+{
+    if  ( event == EVENT_LBUTTONDOWN )
+    {
+
+        Mat img=*(Mat*)data_ptr;
+        circle(img, Point(x,y),3,Scalar(0,0,255), 5, CV_AA);
+        cout<<"x="<<x<<",y="<<y<<endl;
+
+    }
+
+}
 
 int main(){
     namedWindow("input",2);
     namedWindow("output",2);
-    namedWindow("dst_image",2);
-    namedWindow("gray",2);
+    namedWindow("recover",2);
+//    namedWindow("gray",2);
 
 
 //    //floor1 左上->右上->右下->左下
-//    int book_pict_point_x[]={768,2324,2857,324};
-//    int book_pict_point_y[]={1812,1793,2951,3009};
+    int book_pict_point_x[]={768,2324,2857,324};
+    int book_pict_point_y[]={1812,1793,2951,3009};
 
-//    int book_bird_point_x[]={0,200,200,0};
-//    int book_bird_point_y[]={0,0,200,200};
+    int book_bird_point_x[]={0,200,200,0};
+    int book_bird_point_y[]={0,0,200,200};
 
     //climb.jpg
-    int book_pict_point_x[]={744,960,1551,119};
-    int book_pict_point_y[]={495,495,1079,1079};
+//    int book_pict_point_x[]={744,960,1551,119};
+//    int book_pict_point_y[]={495,495,1079,1079};
 
-    int book_bird_point_x[]={0,2,2,0};
-    int book_bird_point_y[]={0,0,6,6};
+//    int book_bird_point_x[]={0,2,2,0};
+//    int book_bird_point_y[]={0,0,6,6};
 
     vector<Point2f>  original_pts,bird_pts;
 
@@ -330,8 +342,9 @@ int main(){
 
 
 
-    Mat outputImg;
 
+    Mat outputImg;
+    Mat recover_img;
 
 
 
@@ -340,7 +353,9 @@ int main(){
 //    std::sort(all_pics.begin(),all_pics.end(),less<string>());
 
     vector<string> all_pics;
-    all_pics.push_back("/home/gumh/Videos/climb.jpg");
+    all_pics.push_back("/home/gumh/Pictures/floor1.jpg");
+
+    setMouseCallback("output", mouseHandler_ipm, &outputImg);
 
     int idx=0;
     while(1)
@@ -351,6 +366,13 @@ int main(){
 
 
         Mat inputImg=imread(all_pics[idx]); 
+
+        //draw line in picture
+        for(int i=0;i<original_pts.size()-1;i++){
+            line(inputImg,original_pts[i],original_pts[i+1],Scalar(0,255,0),3);
+        }
+        line(inputImg,original_pts[3],original_pts[0],Scalar(0,255,0),3);
+
         // IPM object
         int width=inputImg.cols;
         int height=inputImg.rows;
@@ -359,14 +381,16 @@ int main(){
         Mat H,H2;
         H2=getPerspectiveTransform(bird_pts,original_pts);
         cout<<"H2="<<H2<<endl;
-        H2.at<double>(2,2)=35;
+        H2.at<double>(2,2)=8.37;
         warpPerspective(inputImg,outputImg,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_INVERSE_MAP+CV_WARP_FILL_OUTLIERS);
 
-        flip(outputImg,outputImg,1);
-        flip(outputImg,outputImg,0);
+//        flip(outputImg,outputImg,1);
+//        flip(outputImg,outputImg,0);
 
+        warpPerspective(outputImg,recover_img,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS);
         imshow("output", outputImg);
         imshow("input", inputImg);
+        imshow("recover",recover_img);
 
 
 
@@ -384,10 +408,14 @@ int main(){
 
              cout<<"H2="<<H2<<endl;
 
-             flip(outputImg,outputImg,1);
-             flip(outputImg,outputImg,0);
+//             flip(outputImg,outputImg,1);
+//             flip(outputImg,outputImg,0);
 
              imshow("output", outputImg);
+
+             warpPerspective(outputImg,recover_img,H2,Size(width,height),CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS);
+
+             imshow("recover",recover_img);
 
 
              key=waitKey(0);

@@ -52,6 +52,7 @@ std::string& trim(std::string &s);
 
 int compareIgnoreCase(const string& str1,const string& str2);
 
+bool fileExists(const char *fileName);
 
 
 
