@@ -21,7 +21,7 @@ void test_svm(string folder);
 
 string svm_xml="svm.xml";
 
-bool use_hsv=true;
+bool use_hsv=false;
 
 int main(int argc, char** argv)
 {
@@ -31,9 +31,9 @@ int main(int argc, char** argv)
     string pict_name="/home/gumh/Pictures/1.jpeg";
 
 //    if(argc==2){
-        train_svm(pict_name,svm_name);
+//        train_svm(pict_name,svm_name);
 //    }else{
-//        test_svm("/home/gumh/Pictures/stereo_calibrate1/");
+        test_svm("/home/gumh/Pictures/stereo_calibrate1/");
 //    }
     return 0;
 }
@@ -247,7 +247,7 @@ void test_svm(string folder){
 
            Point ct((rect_points[0].x+rect_points[2].x)/2*2/3,(rect_points[0].y+rect_points[2].y)/2);
            sprintf(name,"%f,%f",blob_angle_deg,contour_area);
-           putText(image,name,rect_points[3],CV_FONT_HERSHEY_COMPLEX,0.5,1);
+//           putText(image,name,rect_points[3],CV_FONT_HERSHEY_COMPLEX,0.5,1);
 
 //           drawContours(image, contours,i, Scalar(255,0,0),1);
        }
