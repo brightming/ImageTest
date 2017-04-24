@@ -6,22 +6,22 @@ using namespace std;
 using namespace cv;
 int test_homogoraphy(){
 
-    vector<Point2f>  original_pts,another_pts;
+    vector<Point2f>  obj_pts,image_pts;
 
-    original_pts.push_back(Point2f(1142,400));  //book在图1中的坐标
-    original_pts.push_back(Point2f(2832,764));
-    original_pts.push_back(Point2f(2300,3252));
-    original_pts.push_back(Point2f(320,2676));
-
-
-    another_pts.push_back(Point2f(1833,281)); //在图2中的坐标
-    another_pts.push_back(Point2f(2584,1303));
-    another_pts.push_back(Point2f(924,2218));
-    another_pts.push_back(Point2f(163,960));
+    obj_pts.push_back(Point2f(1142,400));  //book在图1中的坐标
+    obj_pts.push_back(Point2f(2832,764));
+    obj_pts.push_back(Point2f(2300,3252));
+    obj_pts.push_back(Point2f(320,2676));
 
 
+    image_pts.push_back(Point2f(1833,281)); //在图2中的坐标
+    image_pts.push_back(Point2f(2584,1303));
+    image_pts.push_back(Point2f(924,2218));
+    image_pts.push_back(Point2f(163,960));
 
-    Mat H = findHomography(original_pts, another_pts, RANSAC, 4);
+
+
+    Mat H = findHomography(obj_pts, image_pts, RANSAC, 4);
     cout<<H<<endl;
 
     Mat image=imread("/home/gumh/Pictures/book1.jpg");
@@ -63,42 +63,59 @@ int test_homogoraphy(){
 
 
 void test_getperspective(){
-    vector<Point2f>  original_pts,another_pts;
+    vector<Point2f>  obj_pts,image_pts;
 
-//    original_pts.push_back(Point2f(0,0));  //book在图1中的坐标
-//    original_pts.push_back(Point2f(2,0));
-//    original_pts.push_back(Point2f(0,1));
-//    original_pts.push_back(Point2f(2,1));
+//    obj_pts.push_back(Point2f(0,0));  //book在图1中的坐标
+//    obj_pts.push_back(Point2f(2,0));
+//    obj_pts.push_back(Point2f(0,1));
+//    obj_pts.push_back(Point2f(2,1));
 
 
-//    another_pts.push_back(Point2f(758,2826)); //在图2中的坐标
-//    another_pts.push_back(Point2f(2706,2830));
-//    another_pts.push_back(Point2f(514,3826));
-//    another_pts.push_back(Point2f(3002,3830));
+//    image_pts.push_back(Point2f(758,2826)); //在图2中的坐标
+//    image_pts.push_back(Point2f(2706,2830));
+//    image_pts.push_back(Point2f(514,3826));
+//    image_pts.push_back(Point2f(3002,3830));
 
 //     Mat perspec_pict=imread("/home/gumh/Pictures/floor2.jpg");
 
 
-    original_pts.push_back(Point2f(0,0));
-    original_pts.push_back(Point2f(2,0));
-    original_pts.push_back(Point2f(0,1));
-    original_pts.push_back(Point2f(2,1));
+    obj_pts.push_back(Point2f(0,0));
+    obj_pts.push_back(Point2f(21,0));
+    obj_pts.push_back(Point2f(21,29));
+    obj_pts.push_back(Point2f(0,29));
 
 
-    another_pts.push_back(Point2f(820,775));
-    another_pts.push_back(Point2f(1243,775));
-    another_pts.push_back(Point2f(577,986));
-    another_pts.push_back(Point2f(1785,986));
+    image_pts.push_back(Point2f(396,403));
+    image_pts.push_back(Point2f(459,408));
+    image_pts.push_back(Point2f(459,446));
+    image_pts.push_back(Point2f(385,437));
 
-    Mat perspec_pict=imread("/home/gumh/Videos/hw2/image-443.jpg");
+    string filename="/home/gumh/Videos/chessboard/intrinsic.yml";
+    Mat intrinsic_mat,distort_mat;
+    FileStorage fs(filename,FileStorage::READ);
+    fs["camera_matrix"] >> intrinsic_mat;
+    fs["distortion_coefficients"] >> distort_mat;
+    fs.release();
+    cout<<intrinsic_mat<<endl;
+    cout<<distort_mat<<endl;
+
+    Mat perspec_pict=imread("/home/gumh/Videos/chessboard/test2.jpg");
+//    cv::initUndistortRectifyMap(intrinsic_mat,distort_mat,perspec_pict,
+    cv::Mat undist_mat;
+    cv::undistort(perspec_pict,undist_mat,intrinsic_mat,distort_mat);
+    imshow("1",perspec_pict);
+
+
+//    imwrite("/home/gumh/Videos/chessboard/test2-undist.jpg",undist_mat);
 
 
      for(int i=0;i<4;i++){
-         circle(perspec_pict,another_pts[i],20,Scalar(255,0,0),2);
+         circle(undist_mat,image_pts[i],20,Scalar(255,0,0),2);
      }
 
 
-    Mat H=getPerspectiveTransform(original_pts,another_pts);
+
+    Mat H=getPerspectiveTransform(obj_pts,image_pts);
     cout<<"H="<<H<<endl;
     H.at<double>(2,2)=10;
 
@@ -106,18 +123,10 @@ void test_getperspective(){
     Mat dst;
     warpPerspective(perspec_pict,dst,H,Size(perspec_pict.cols,perspec_pict.rows),WARP_INVERSE_MAP|INTER_LINEAR);
 
-
-
-
-
-
-
-
-
     namedWindow("ori1",2);
     namedWindow("dst1",2);
 
-    imshow("ori1",perspec_pict);
+    imshow("ori1",undist_mat);
     imshow("dst1",dst);
 
     double Z=H.at<double>(2,2);

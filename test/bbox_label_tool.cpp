@@ -27,7 +27,7 @@ void read_bbox(string file,vector<BBox> &bboxs);
 void save_bbox(string file,vector<BBox> &bboxs);
 
 vector<string> all_classes = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
-vector<string> classes={"bus","car","truck","person"};
+vector<string> classes={"r","y","g","b"};
 //vector<string> classes = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
 vector<BBox> bboxs;
@@ -49,7 +49,7 @@ void reshow(){
 
     cout<<"cur_img_file="<<cur_img_file<<endl;
     sprintf(text,"%s",cur_img_file.c_str());
-    putText(for_draw,text,Point(for_draw.cols/3,10),cv::FONT_HERSHEY_PLAIN,1,Scalar(0,0,255),1);
+    putText(for_draw,text,Point(for_draw.cols/3,10),cv::FONT_HERSHEY_PLAIN,0.4,Scalar(0,0,255),1);
 
     draw_bbox(for_draw,bboxs);
 
@@ -64,7 +64,7 @@ void reshow(){
             color=Scalar(255,0,0);
         }
 
-        putText(for_draw,string(text),Point(10,20+i*step),FONT_HERSHEY_SIMPLEX,1,color,2,8);
+        putText(for_draw,string(text),Point(10,20+i*step),FONT_HERSHEY_SIMPLEX,0.4,color,2,8);
     }
 
 
@@ -135,6 +135,11 @@ void mouseHandler(int event, int x, int y, int flags, void* data_ptr)
         if(can_drag){
             //            cout<<"can drag mouse mouse move..."<<endl;
             end_p=Point(x,y);
+
+            reshow();
+
+            //加上新框
+
         }
     }else if(event==EVENT_LBUTTONUP){
         if(start_p.x==end_p.x && start_p.y==end_p.y){
@@ -161,7 +166,7 @@ void mouseHandler(int event, int x, int y, int flags, void* data_ptr)
             //太小的框，或者只是单击了一下鼠标，则不认为是box
             double dist=sqrt(pow(end_p.x-start_p.x,2)+pow(end_p.y-start_p.y,2));
 //            cout<<"dist="<<dist<<endl;
-            if(dist<20){
+            if(dist<10){
                 return;
             }
 
@@ -363,6 +368,7 @@ void make_bbox(string path,string img_path,bool remove_from_src){
     char handled[256];
     sprintf(name,"%s/%s/",path.c_str(),img_path.c_str());
 
+    cout<<"name="<<name<<endl;
     vector<string> all_imgs=getAllFilesFromDir(name);
     stable_sort(all_imgs.begin(),all_imgs.end(),compstr);
 
@@ -550,7 +556,13 @@ void generate_train_txt(string path){
         getFileNameAndSuffix(fileNameOnly,onlyName,suffix);
         onlyName=trim(onlyName);
 
-        sprintf(img_name,"%s/JPEGImages/%s.jpg",path.c_str(),onlyName.c_str());
+        sprintf(img_name,"%s/JPEGImages/%s.jpeg",path.c_str(),onlyName.c_str());
+        ifstream tmpread(img_name);
+        if(tmpread.is_open()==false){
+            sprintf(img_name,"%s/JPEGImages/%s.jpg",path.c_str(),onlyName.c_str());
+        }else{
+            tmpread.close();
+        }
         train_file<<img_name<<endl;
 
     }
@@ -753,23 +765,58 @@ void translate_car_truck_bus_to_car(string src_label_dir_path,string dst_label_d
     }
 }
 
+/**
+ * @brief statistic_sample_distribute
+ * 统计样本的分布
+ * @param path
+ * @param img_path
+ * @param label_path
+ */
+void statistic_sample_distribute(string path,string img_path="JPEGImages",string label_path="labels"){
+
+    int classes_cnt[classes.size()];
+    for(int idx=0;idx<classes.size();idx++){
+        classes_cnt[idx]=0;
+    }
+
+    string label_full_path=path+"/"+label_path;
+    vector<string> labels=getAllFilesWithPathFromDir(label_full_path);
+
+    for(string lab:labels){
+        vector<BBox> bboxs;
+        read_bbox(lab,bboxs);
+        for(BBox box:bboxs){
+            classes_cnt[box.cls]=classes_cnt[box.cls]+1;
+        }
+    }
+
+    cout<<"--sample count----"<<endl;
+    for(int idx=0;idx<classes.size();idx++){
+        cout<<"label:"<<classes[idx]<<" ,count="<<classes_cnt[idx]<<endl;
+    }
+}
+
+
 int main(int argc,char** argv){
 
     string path;
     if(argc==1){
-        path.assign("/home/gumh/Videos/bbox样本/");
+        path.assign("/home/gumh/TrainData/pict_with_traffic_light/all/");
     }else{
         path.assign(argv[1]);
     }
 
 //    decode_video_to_pict("/home/gumh/Videos/bbox样本/machangroad.mp4",2);
+//    decode_video_to_pict("/home/gumh/TrainData/AirPlane.2017.3.30/left2017033d16150767_left.avi","left2017033d16150767_left");
 
 //    trim_pre_space_of_img_name(path);
 
-//    make_bbox(path,"JPEGImages",false);
+//    make_bbox(path,"images",false);
+
+    statistic_sample_distribute(path);
 
     //generate_train_txt
-//    generate_train_txt(path);
+    generate_train_txt(path);
 
 //    resize_img(path,4);
 
@@ -779,5 +826,5 @@ int main(int argc,char** argv){
 
 //    decode_video_to_pict("/home/gumh/Videos/bbox样本/huangpuroad1.mp4","fortest");
 
-    translate_car_truck_bus_to_car("/home/gumh/Videos/bbox样本/labels","/home/gumh/Videos/bbox样本/2class_labels");
+//    translate_car_truck_bus_to_car("/home/gumh/Videos/bbox样本/labels","/home/gumh/Videos/bbox样本/2class_labels");
 }

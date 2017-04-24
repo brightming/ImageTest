@@ -62,7 +62,8 @@ void test_color_dist(cv::Mat &img,cv::Vec3b target_color,int min_dist){
     colorDetect cdect;
     cdect.SetMinDistance(min_dist);
     cdect.SetTargetColor(target_color);
-    cv::Mat res=cdect.process(img);
+    cv::Mat res;
+    cdect.process(img,&res);
 
     cv::imshow("ori",img);
     cv::imshow("res",res);
@@ -92,20 +93,39 @@ void test_floodfill(){
     cv::waitKey(0);
 }
 
+
+struct data{
+    int a;
+    unsigned short b;
+};
+
+void ts(){
+    data mData;
+    mData.a=0x2015;
+    mData.b=0x0102;
+    char *pData=(char*)&mData;
+    int *k;
+    printf("%d %d %d %d %d",sizeof(pData),(int)(*(pData+4)),sizeof(unsigned short),sizeof(int),sizeof(k));
+
+
+}
+
 int main(int argc, char* argv[])
 {
 
-    cv::Mat img=cv::imread("picture/9.png");
+    ts();
+    return 1;
+    cv::Mat img=cv::imread("/home/gumh/Pictures/转弯4 2017-02-17 10-32-41.png");
 
-//    Vec3b lane_color(193,195,194);//bgr
-//    Vec3b road_color(106,108,108);
-//    Vec3b tree_color(94,98,88);
-//    int min_dist=60;
-//    Vec3b target_color(lane_color);
-//    test_color_dist(img,target_color,min_dist);
+    cv::Vec3b lane_color(193,195,194);//bgr
+    cv::Vec3b road_color(106,108,108);
+    cv::Vec3b tree_color(94,98,88);
+    int min_dist=10;
+    cv::Vec3b target_color(lane_color);
+    test_color_dist(img,target_color,min_dist);
 
 
-    test_floodfill();
+//    test_floodfill();
 
     return 0;
 }
