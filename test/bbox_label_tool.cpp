@@ -1,4 +1,5 @@
-
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <opencv2/opencv.hpp>
 
 #include <iostream>
@@ -27,7 +28,12 @@ void read_bbox(string file,vector<BBox> &bboxs);
 void save_bbox(string file,vector<BBox> &bboxs);
 
 vector<string> all_classes = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
-vector<string> classes={"r","y","g","b"};
+vector<string> classes={"rL","rS","rR","rC",
+                        "yL","yS","yR","yC",
+                        "gL","gS","gR","gC",
+                        "black",
+                        "back"
+                       };
 //vector<string> classes = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
 vector<BBox> bboxs;
@@ -47,7 +53,7 @@ void reshow(){
 
     for_draw=ori_pict.clone();
 
-    cout<<"cur_img_file="<<cur_img_file<<endl;
+//    cout<<"cur_img_file="<<cur_img_file<<endl;
     sprintf(text,"%s",cur_img_file.c_str());
     putText(for_draw,text,Point(for_draw.cols/3,10),cv::FONT_HERSHEY_PLAIN,0.4,Scalar(0,0,255),1);
 
@@ -64,7 +70,7 @@ void reshow(){
             color=Scalar(255,0,0);
         }
 
-        putText(for_draw,string(text),Point(10,20+i*step),FONT_HERSHEY_SIMPLEX,0.4,color,2,8);
+        putText(for_draw,string(text),Point(10,15+i*step),FONT_HERSHEY_PLAIN,0.4,color,1,8);
     }
 
 
@@ -80,8 +86,8 @@ void reshow(){
  * @return
  */
 int get_selected_box(int start_idx,Point pt){
-//    bool delete_state=false;
-//    int current_selected_box=-1;
+    //    bool delete_state=false;
+    //    int current_selected_box=-1;
 
     if(start_idx<0){
         start_idx=0;
@@ -128,7 +134,7 @@ void mouseHandler(int event, int x, int y, int flags, void* data_ptr)
         end_p=Point(x,y);
 
         can_drag=true;
-//        cout<<"lbtn down"<<endl;
+        //        cout<<"lbtn down"<<endl;
 
     }else if(event==EVENT_MOUSEMOVE){
 
@@ -157,15 +163,15 @@ void mouseHandler(int event, int x, int y, int flags, void* data_ptr)
             reshow();
         }
         else if(can_drag==true){
-//            cout<<"confirm to add a box.start_p=("<<start_p.x<<","<<start_p.y<<"),"<<
-//                  "end_p=("<<end_p.x<<","<<end_p.y<<")"<<
-//                  endl;
+            //            cout<<"confirm to add a box.start_p=("<<start_p.x<<","<<start_p.y<<"),"<<
+            //                  "end_p=("<<end_p.x<<","<<end_p.y<<")"<<
+            //                  endl;
             //确认结果
             can_drag=false;
 
             //太小的框，或者只是单击了一下鼠标，则不认为是box
             double dist=sqrt(pow(end_p.x-start_p.x,2)+pow(end_p.y-start_p.y,2));
-//            cout<<"dist="<<dist<<endl;
+            //            cout<<"dist="<<dist<<endl;
             if(dist<10){
                 return;
             }
@@ -185,8 +191,8 @@ void mouseHandler(int event, int x, int y, int flags, void* data_ptr)
                 top_y=start_p.y;
                 bot_y=end_p.y;
             }
-//            cout<<"left_x="<<left_x<<",right_x="<<right_x<<
-//                  ",top_y="<<top_y<<",bottom_y="<<bot_y<<endl;
+            //            cout<<"left_x="<<left_x<<",right_x="<<right_x<<
+            //                  ",top_y="<<top_y<<",bottom_y="<<bot_y<<endl;
             w=right_x-left_x;
             h=bot_y-top_y;
             BBox box;
@@ -250,7 +256,7 @@ void read_bbox(string file,vector<BBox> &bboxs){
 }
 
 void save_bbox(string file,vector<BBox> &bboxs){
-    cout<<"save bbox.file="<<file<<",bboxs.size="<<bboxs.size()<<endl;
+//    cout<<"save bbox.file="<<file<<",bboxs.size="<<bboxs.size()<<endl;
     //如果已有，先删除
     remove(file.c_str());
 
@@ -261,7 +267,7 @@ void save_bbox(string file,vector<BBox> &bboxs){
 
 
     for(BBox box:bboxs){
-//        cout<<"save one bbox.cls="<<box.cls<<",x="<<box.x<<",y="<<box.y<<",w="<<box.w<<",h="<<box.h<<endl;
+        //        cout<<"save one bbox.cls="<<box.cls<<",x="<<box.x<<",y="<<box.y<<",w="<<box.w<<",h="<<box.h<<endl;
         write<<box.cls<<" "<<box.x<<" "<<box.y<<" "<<box.w<<" "<<box.h<<endl;
     }
     write.close();
@@ -280,15 +286,15 @@ void draw_bbox(Mat& pict,vector<BBox> bboxs){
     for(i=0;i<bboxs.size();i++){
         BBox box=bboxs[i];
 
-//        int x=box.x*width;
-//        int y=box.y*height;
-//        int w=box.w*width;
-//        int h=box.h*height;
+        //        int x=box.x*width;
+        //        int y=box.y*height;
+        //        int w=box.w*width;
+        //        int h=box.h*height;
 
-//        x-=w/2;
-//        y-=h/2;
+        //        x-=w/2;
+        //        y-=h/2;
 
-//        cout<<"draw_bbox :#"<<i++<<",pict.width="<<width<<",pict.height="<<height<<",cls="<<box.cls<<",box.x="<<box.x<<",x="<<x<<",box.y="<<box.y<<",y="<<y<<",width="<<w<<",height="<<h<<endl;
+        //        cout<<"draw_bbox :#"<<i++<<",pict.width="<<width<<",pict.height="<<height<<",cls="<<box.cls<<",box.x="<<box.x<<",x="<<x<<",box.y="<<box.y<<",y="<<y<<",width="<<w<<",height="<<h<<endl;
 
         int thickness=1;
         Scalar color;
@@ -297,7 +303,8 @@ void draw_bbox(Mat& pict,vector<BBox> bboxs){
             color=Scalar(0,0,255);
         }else{
             //
-            color=Scalar(0,10+box.cls*10,10+box.cls*8);
+//            color=Scalar(0,20+box.cls*10,10+box.cls*8);
+            color=Scalar(255,0,0);
         }
         rectangle(pict,box.rect,color,thickness);
 
@@ -353,7 +360,7 @@ bool compstr(const string &a, const string &b) {
  *
  * @return
  */
-void make_bbox(string path,string img_path,bool remove_from_src){
+void make_bbox(string path,string img_path,string dst_label_path="labels",bool remove_from_src=false){
     //setMouseCallback("output", mouseHandler_ipm, &outputImg);
     //    void getFileNameAndSuffix(string& fileNameOnly,string& onlyName,string& suffix)
 
@@ -372,10 +379,10 @@ void make_bbox(string path,string img_path,bool remove_from_src){
     vector<string> all_imgs=getAllFilesFromDir(name);
     stable_sort(all_imgs.begin(),all_imgs.end(),compstr);
 
-//    cout<<"path="<<name<<",image size="<<all_imgs.size()<<endl;
+    //    cout<<"path="<<name<<",image size="<<all_imgs.size()<<endl;
     bool quit=false;
     for(int i=0;i<all_imgs.size() && quit==false;i++){
-//        current_cls=0;
+        //        current_cls=0;
 
         can_drag=false;
 
@@ -387,7 +394,7 @@ void make_bbox(string path,string img_path,bool remove_from_src){
 
         //get images
         sprintf(name,"%s/%s/%s",path.c_str(),img_path.c_str(),cur_img_file.c_str());
-        cout<<"get image:"<<name<<endl;
+//        cout<<"get image:"<<name<<endl;
         ori_pict=imread(name);
         for_draw=ori_pict.clone();
         sprintf(handled,"%s/JPEGImages/%s",path.c_str(),cur_img_file.c_str());
@@ -395,19 +402,19 @@ void make_bbox(string path,string img_path,bool remove_from_src){
         //get label content
         getFileNameAndSuffix(cur_img_file,onlyName,suffix);
         onlyName=trim(onlyName);
-        sprintf(label_name,"%s/labels/%s.txt",path.c_str(),onlyName.c_str());
+        sprintf(label_name,"%s/%s/%s.txt",path.c_str(),dst_label_path.c_str(),onlyName.c_str());
         bboxs.resize(0);
         if(fileExists(label_name)){
             read_bbox(label_name,bboxs);
         }
 
-        cout<<"img file="<<name<<",label file="<<label_name<<endl;
+//        cout<<"img file="<<name<<",label file="<<label_name<<endl;
         //draw bbox
         reshow();
 
         do{
             char key=waitKey(0);
-//            cout<<"key="<<(int)key<<endl;
+            //            cout<<"key="<<(int)key<<endl;
             int old_current_cls=current_cls;
 
             if((int)key==27){
@@ -424,7 +431,8 @@ void make_bbox(string path,string img_path,bool remove_from_src){
                 quit=true;
                 break;
             }else if(key=='n'){
-                cout<<"next picture"<<endl;
+//                cout<<"next picture"<<endl;
+                cout<<"pict #"<<i+1<<"/"<<all_imgs.size()<<endl;
                 save_bbox(label_name,bboxs);
 
 
@@ -707,7 +715,7 @@ void resize_video(string src_video,float scale){
     if ( !cap.isOpened() )  // if not success, exit program
         cout << "Cannot open the video file" << endl;
 
-//    cap.set(CV_CAP_PROP_POS_MSEC, 100000); //start the video at 300ms
+    //    cap.set(CV_CAP_PROP_POS_MSEC, 100000); //start the video at 300ms
 
     double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
     cout << "Input video's Frame per seconds : " << fps << endl;
@@ -797,34 +805,591 @@ void statistic_sample_distribute(string path,string img_path="JPEGImages",string
 }
 
 
+/**
+ * @brief combine_imgs_and_labels
+ * 将几个分布在不同路径的图片及其对应的label统一汇合到一个地方．
+ *
+ * 一张图片对应多个label
+ *
+ * 适用于：几个人对同样的图片进行标注，每个人都对所有图片进行，但是标注的类别不一样;
+ * 或者几个人对不同的图片集合进行标注，然后汇总
+ * @param img_folders
+ * 全路径的图片文件夹
+ * 里面的图片如果名字是一样的，就是同样的图片
+ * @param label_folders
+ * 全路径的ｌａｂｅｌ文件夹
+ * @param output_img_folder
+ * 全路径的图片输出文件夹
+ * @param output_label_folder
+ * 全路径的ｌａｂｅｌ输出文件夹
+ */
+void combine_imgs_and_labels(vector<string> &img_folders,vector<string> &label_folders,
+                             string &output_img_folder,string &output_label_folder){
+
+
+    vector<string> all_img_paths;
+    vector<string> all_label_paths;
+    map<string,string> img_file_name_to_fullpath;//图片不会重名，如果不同路径下的图片的名字是一样的，那么就是同一张图片
+
+    map<string,vector<string>> label_name_to_fullpaths;//一张图片的ｌａｂｅｌ会有多个
+
+    string path,name,suffix;
+    for(string fold:img_folders){
+        vector<string> imgs=getAllFilesWithPathFromDir(fold);
+        cout<<"imgs.size="<<imgs.size()<<endl;
+        std::copy(imgs.begin(),imgs.end(),back_inserter(all_img_paths));
+        for(string img:imgs){
+            getFilePart(img,path,name,suffix);
+            img_file_name_to_fullpath[name]=img;
+        }
+    }
+    for(string fold:label_folders){
+        vector<string> labels=getAllFilesWithPathFromDir(fold);
+        cout<<"labels.size="<<labels.size()<<endl;
+        std::copy(labels.begin(),labels.end(),back_inserter(all_label_paths));
+
+        for(string label:labels){
+            getFilePart(label,path,name,suffix);
+            vector<string> paths=label_name_to_fullpaths[name];
+            paths.push_back(label);
+            label_name_to_fullpaths[name]=paths;
+        }
+    }
+
+    cout<<"all_img_paths.size="<<all_img_paths.size()<<endl;
+    cout<<"all_label_paths.size="<<all_label_paths.size()<<endl;
+
+    //对于每张图片，寻找相同名字的label
+    char save_name[256];
+    for(map<string,string>::iterator it=img_file_name_to_fullpath.begin();it!=img_file_name_to_fullpath.end();it++){
+        //找同名的ｌａｂｅｌ的情况
+        for(map<string,vector<string>>::iterator it_lab=label_name_to_fullpaths.begin();it_lab!=label_name_to_fullpaths.end();it_lab++){
+            if(it->first==it_lab->first){
+                //找到
+                vector<string> labels=it_lab->second;
+                //读取所有的ｌａｂｅｌｓ的ｂｂｏｘ
+                vector<BBox> all_bboxs;
+                if(labels.size()>0){
+                    for(string lab:labels){
+                        vector<BBox> bboxs;
+                        read_bbox(lab,bboxs);
+                        std::copy(bboxs.begin(),bboxs.end(),back_inserter(all_bboxs));
+                    }
+                    //保存图片到图片输出路径
+                    cv::Mat pict=imread(it->second);
+                    sprintf(save_name,"%s/%s.jpg",output_img_folder.c_str(),it->first.c_str());
+                    imwrite(save_name,pict);
+
+                    //保存ｂｂｏｘ到ｌａｂｅｌ输出路径
+                    sprintf(save_name,"%s/%s.txt",output_label_folder.c_str(),it->first.c_str());
+                    save_bbox(save_name,all_bboxs);
+                }
+                break;
+            }
+        }
+    }
+
+}
+
+
+
+//refer to : https://github.com/NVIDIA/DIGITS/blob/digits-4.0/digits/extensions/data/objectDetection/README.md
+class DetectNetDataFormat{
+public:
+    string type;
+    int truncated=0;
+    int occluded=0;
+    float alpha=0.0;
+    int left=0;
+    int top=0;
+    int right=0;
+    int bottom=0;
+
+    int dimensions_height=0;
+    int dimensions_width=0;
+    int dimensions_length=0;
+
+    int location_x=0;
+    int location_y=0;
+    int location_z=0;
+
+    float rotation_y=0;
+
+    float score=0;
+
+    void ConvertFromBBox(BBox& box,cv::Size &pict_size){
+        cout<<"box.cls="<<box.cls<<endl;
+        type=classes[box.cls];
+        left=(box.x-box.w/2)*pict_size.width;
+        top=(box.y-box.h/2)*pict_size.height;
+
+        right=(box.x+box.w/2)*pict_size.width;
+        bottom=(box.y+box.h/2)*pict_size.height;
+    }
+
+    void Save(ofstream &write){
+        write<<type<<" "<<truncated<<" "
+            <<occluded<<" "<<alpha<<" "
+           <<left<<" "<<top<<" "<<right<<" "<<bottom<<" "
+          <<dimensions_height<<" "<<dimensions_width<<" "<<dimensions_length<<" "
+         <<location_x<<" "<<location_y<<" "<<location_z<<" "
+        <<rotation_y<<" "<<score<<"\n";
+
+    }
+
+};
+
+/**
+ * @brief convert_to_detectnet_format
+ * 转换自己的ｂｂｏｘ的格式为detectnet所需要的格式
+ * 参考:http://lncohn.com/digits/nvidia_object_detection.html
+ * @param pict_dir
+ * @param label_dir
+ * @param output_label_dir
+ */
+void convert_to_detectnet_format(string pict_dir,string label_dir,string output_img_dir,string output_label_dir){
+    char name[256];
+    //get all labels txt
+    vector<string> labels=getAllFilesWithPathFromDir(label_dir);
+
+
+    string filePath,onlyName,suffix;
+
+    string pict_file;
+    for(string lab:labels){
+        cout<<"label file="<<lab<<endl;
+        getFilePart(lab,filePath,onlyName,suffix);
+        pict_file=pict_dir+"/"+onlyName+".jpg";
+        cv::Mat pict=cv::imread(pict_file);
+        cv::Size pict_size(pict.cols,pict.rows);
+        vector<BBox> bboxs,need_boxs;
+        read_bbox(lab,bboxs);
+
+        for(BBox box:bboxs){
+            if(box.cls>=1){//only one class
+                continue;
+            }
+            need_boxs.push_back(box);
+
+        }
+
+        if(need_boxs.size()==0){
+            continue;
+        }
+
+        string dstfile=output_label_dir+"/"+onlyName+"."+suffix;
+        ofstream write(dstfile,ios::out|ios::trunc);
+        for(BBox box:need_boxs){
+            DetectNetDataFormat dnd;
+            dnd.ConvertFromBBox(box,pict_size);
+            dnd.Save(write);
+        }
+        write.close();
+        string dst_pict_file=output_img_dir+"/"+onlyName+".jpg";
+        cv::imwrite(dst_pict_file,pict);
+    }
+}
+
+
+
+class TrafficLightWindow{
+public:
+    cv::Point2i cent_p_;//中心点
+    cv::Rect rect;
+};
+
+class TrafficLightWindowWrap{
+public:
+    vector<TrafficLightWindow> wins;
+    int width=250;
+    int height=100;
+    bool delete_state=false;
+    int cur_select_win=-1;
+    cv::Mat orig_pict;
+    cv::Mat for_draw;
+    string parent_path="";//包含图片，window定义的父路径
+    string win_pict_path="";//保存window的图片文件夹
+    string cur_pic_only_name="";//图片的名称，没有路径与后缀
+};
+
+
+bool check_and_fill_window(TrafficLightWindowWrap &wrap,TrafficLightWindow &window){
+
+    int st_x,st_y,e_x,e_y;
+
+    st_x=window.cent_p_.x-wrap.width/2;
+    st_y=window.cent_p_.y-wrap.height/2;
+
+    if(st_x<0){
+        st_x=0;
+    }
+    if(st_x>=wrap.orig_pict.cols){
+        st_x=wrap.orig_pict.cols;
+    }
+    if(st_y<0){
+        st_y=0;
+    }
+    if(st_y>=wrap.orig_pict.rows){
+        st_y=wrap.orig_pict.rows;
+    }
+
+    if(st_x>wrap.orig_pict.cols-20
+            ||
+            st_y>wrap.orig_pict.rows-20
+            ){
+        cout<<"st_x("<<st_x<<
+             ") > wrap.orig_pict.cols-20("<<wrap.orig_pict.cols-20<<") || "
+            "st_y("<<st_y<<") > wrap.orig_pict.rows-20 ("<<wrap.orig_pict.rows-20<<")!!!"<<endl;
+        return false;
+    }
+
+    window.rect.x=st_x;
+    window.rect.y=st_y;
+    window.rect.width=wrap.width;
+    window.rect.height=wrap.height;
+    if(st_x+wrap.width>=wrap.orig_pict.cols){
+        window.rect.width=wrap.orig_pict.cols-st_x;
+    }
+    if(st_y+wrap.height>=wrap.orig_pict.rows){
+        window.rect.height=wrap.orig_pict.rows-st_y;
+    }
+
+    return true;
+}
+
+void read_traffic_light_window(string file,TrafficLightWindowWrap &wrap){
+    wrap.wins.clear();
+    vector<string> conts;
+    get_file_content(file,conts);
+
+    bool ok=false;
+
+    for(string line:conts){
+        line=trim(line);
+//        cout<<"line="<<line<<endl;
+        if(!line.empty()){
+            //100,200
+            vector<string> fields=split(line," ");
+            if(fields.size()!=2){
+                cout<<"error labels lien!"<<line<<endl;
+                continue;
+            }
+//            cout<<"field[0]="<<fields[0]
+//               <<" [1]="<<fields[1]
+//              <<endl;
+            TrafficLightWindow window;
+            window.cent_p_.x=atoi(fields[0].c_str());//x
+            window.cent_p_.y=atoi(fields[1].c_str());//y
+
+            ok=check_and_fill_window(wrap,window);
+            if(ok){
+                wrap.wins.push_back(window);
+            }
+        }
+    }
+}
+
+void show_windows(TrafficLightWindowWrap* wrap){
+
+    cout<<"show_windows.wrap.wins.size="<<wrap->wins.size()<<endl;
+    wrap->for_draw=wrap->orig_pict.clone();
+    int idx=0;
+    for(TrafficLightWindow window:wrap->wins){
+        cout<<"loop"<<endl;
+        if(check_and_fill_window(*wrap,window)==false){
+            cout<<"continue"<<endl;
+            continue;
+        }
+        cout<<"wind:rect.x="<<window.rect.x<<",y="<<window.rect.y<<",width="<<window.rect.width<<",height="<<window.rect.height<<endl;
+        if(idx==wrap->cur_select_win && wrap->delete_state==true){
+            cv::rectangle(wrap->for_draw,window.rect,cv::Scalar(0,0,255),2);
+        }else{
+             cv::rectangle(wrap->for_draw,window.rect,cv::Scalar(255,0,0),2);
+        }
+
+        idx++;
+    }
+    imshow("window",wrap->for_draw);
+}
+
+int get_selected_window(int start_idx,Point pt,TrafficLightWindowWrap wrap){
+    //    bool delete_state=false;
+    //    int current_selected_box=-1;
+
+    cout<<"get_selected_window pt=("<<pt.x<<","<<pt.y<<")"<<endl;
+    cv::circle(wrap.for_draw,pt,3,cv::Scalar(0,255,255),-2);
+    if(start_idx<0){
+        start_idx=0;
+    }
+    if(start_idx>=wrap.wins.size()){
+        start_idx=wrap.wins.size()-1;
+    }
+
+    int idx=-1;
+    for(int i=start_idx;i<wrap.wins.size();i++){
+        TrafficLightWindow win=wrap.wins[i];
+        cout<<"win.rect.x="<<win.rect.x<<",y="<<win.rect.y<<",width="<<win.rect.width<<",height="<<win.rect.height<<endl;
+        if(win.rect.contains(pt)){
+            idx=i;
+        }
+    }
+    if(idx==-1){
+        //循环搜索
+        for(int i=0;i<=start_idx;i++){
+            TrafficLightWindow win=wrap.wins[i];
+            if(win.rect.contains(pt)){
+                idx=i;
+            }
+        }
+    }
+
+    cout<<"get_selected_window="<<idx<<endl;
+
+    return idx;
+}
+
+/**
+ * @brief mouseHandler
+ * @param event
+ * @param x
+ * @param y
+ * @param flags
+ * @param data_ptr
+ */
+void mouse_handle_window(int event, int x, int y, int flags, void* data_ptr)
+{
+    TrafficLightWindowWrap* wrap=(TrafficLightWindowWrap*)data_ptr;
+
+    cv::Point2i pt(x,y);
+    if  ( event == EVENT_LBUTTONDBLCLK )//双击选择中心点
+    {
+        cout<<"dbclk"<<endl;
+
+        TrafficLightWindow win;
+        win.cent_p_.x=x;
+        win.cent_p_.y=y;
+
+        if(check_and_fill_window(*wrap,win)){
+            wrap->wins.push_back(win);
+            show_windows(wrap);
+        }
+    }else if(event==EVENT_LBUTTONDOWN){
+        //选择
+        int idx=get_selected_window(0,pt,*wrap);
+        if(idx>=0){
+            wrap->cur_select_win=idx;
+            wrap->delete_state=true;
+            show_windows(wrap);
+        }
+    }else if(event==EVENT_RBUTTONDOWN){
+        //右键按下，取消
+        cout<<"rbtn down,cancel"<<endl;
+       //取消删除模式
+        wrap->cur_select_win=-1;
+        wrap->delete_state=false;
+        show_windows(wrap);
+    }
+
+}
+
+void save_windows(string label_file,TrafficLightWindowWrap &wrap){
+    cout<<"save label_file.file="<<label_file<<",winds.size="<<wrap.wins.size()<<endl;
+    //如果已有，先删除
+    remove(label_file.c_str());
+
+    if(wrap.wins.size()==0){
+        return;
+    }
+    ofstream write(label_file,ios::out|ios::trunc);
+
+
+    char rect_file_name[256];
+    for(TrafficLightWindow win:wrap.wins){
+        //        cout<<"save one bbox.cls="<<box.cls<<",x="<<box.x<<",y="<<box.y<<",w="<<box.w<<",h="<<box.h<<endl;
+        write<<win.cent_p_.x<<" "<<win.cent_p_.y<<endl;
+        cv::Mat rect=wrap.orig_pict(win.rect);
+        sprintf(rect_file_name,"%s/%s_%d_%d.jpg",wrap.win_pict_path.c_str(),wrap.cur_pic_only_name.c_str()
+                ,win.cent_p_.x,win.cent_p_.y);
+        cv::imwrite(rect_file_name,rect);
+    }
+    write.close();
+}
+
+/**
+ * @brief create_traffic_light_window
+ * 创建包含红绿灯的小窗口．
+ * 红绿灯的检测不是在整个图片中检索的，而是在某个小范围内检测的．
+ * 训练的时候，也是从原图中取出窗口，在这个窗口里进行样本框定．
+ */
+void create_traffic_light_window(string parent_path,string img_folder){
+
+//    vector<TrafficLightWindow> windows;
+    TrafficLightWindowWrap wrap;
+
+    namedWindow("window",2);
+    setMouseCallback("window", mouse_handle_window,&wrap);
+
+    string fileNameOnly, onlyName, suffix;
+
+    char name[256];
+    char label_name[256];
+    char text[64];
+    char handled[256];
+
+    //创建用于保存ｗｉｎｄｏｗ信息的文件夹
+    char window_folder_name[256];
+    sprintf(window_folder_name,"%s/%s_window_txt/",parent_path.c_str(),img_folder.c_str());
+    int status;
+    status = mkdir(window_folder_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    //创建保存截取出来的window图片的文件夹
+    char win_pict_folder_name[256];
+    sprintf(win_pict_folder_name,"%s/%s_window_rect/",parent_path.c_str(),img_folder.c_str());
+    status = mkdir(win_pict_folder_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    wrap.parent_path=parent_path;
+    wrap.win_pict_path=win_pict_folder_name;
+
+    //加载图片
+    sprintf(name,"%s/%s/",parent_path.c_str(),img_folder.c_str());
+
+    cout<<"name="<<name<<endl;
+    vector<string> all_imgs=getAllFilesFromDir(name);
+    stable_sort(all_imgs.begin(),all_imgs.end(),compstr);
+
+    //    cout<<"path="<<name<<",image size="<<all_imgs.size()<<endl;
+    bool quit=false;
+
+    for(int i=0;i<all_imgs.size() && quit==false;i++){
+        //        current_cls=0;
+
+        can_drag=false;
+
+        delete_state=false;
+        current_selected_box=-1;
+
+        cur_img_file=all_imgs[i];
+
+
+
+        //get images
+        sprintf(name,"%s/%s/%s",parent_path.c_str(),img_folder.c_str(),cur_img_file.c_str());
+//        cout<<"get image:"<<name<<endl;
+        ori_pict=imread(name);
+        wrap.orig_pict=ori_pict.clone();
+
+        //get label content
+        getFileNameAndSuffix(cur_img_file,onlyName,suffix);
+        onlyName=trim(onlyName);
+        wrap.cur_pic_only_name=onlyName;
+        sprintf(label_name,"%s/%s.txt",window_folder_name,onlyName.c_str());
+        wrap.wins.resize(0);
+        if(fileExists(label_name)){
+            read_traffic_light_window(label_name,wrap);
+        }
+
+//        cout<<"img file="<<name<<",label file="<<label_name<<endl;
+        //draw bbox
+        show_windows(&wrap);
+
+//        save_windows(label_name,wrap);
+//        continue;
+
+        do{
+            char key=waitKey(0);
+            //            cout<<"key="<<(int)key<<endl;
+
+            if((int)key==27){
+                save_windows(label_name,wrap);
+                quit=true;
+                break;
+            }else if(key=='n'){
+                cout<<"next picture"<<endl;
+                save_windows(label_name,wrap);
+
+                break;
+            }else if((int)key==-1){//delete key
+                //delete the selected box
+                if(wrap.wins.size()>0 && wrap.delete_state && wrap.cur_select_win>=0){
+                    for(int k=wrap.cur_select_win;k<wrap.wins.size()-1;k++){
+                        wrap.wins[k]=wrap.wins[k+1];
+                    }
+                    wrap.wins.resize(wrap.wins.size()-1);
+                    wrap.delete_state=false;
+                    wrap.cur_select_win=-1;
+
+                    show_windows(&wrap);
+
+                }
+            }
+
+        }while(true);
+    }
+
+}
+
+
+
+void test_combine_labels(){
+    vector<string> img_folders;
+    vector<string> label_folders;
+    string output_img_folder;
+    string output_label_folder;
+
+    img_folders.push_back("/home/gumh/Videos/for_combine/3429799873058_src_window_rect");
+    img_folders.push_back("/home/gumh/Videos/for_combine/4239794161862_src_window_rect");
+    img_folders.push_back("/home/gumh/Videos/for_combine/JPEGImages");
+
+    label_folders.push_back("/home/gumh/Videos/for_combine/3429799873058_src_window_rect_labels");
+    label_folders.push_back("/home/gumh/Videos/for_combine/4239794161862_src_window_rect_labels");
+    label_folders.push_back("/home/gumh/Videos/for_combine/labels");
+
+    output_img_folder="/home/gumh/Videos/for_combine/output_imgs/";
+    output_label_folder="/home/gumh/Videos/for_combine/output_labels/";
+    combine_imgs_and_labels(img_folders,label_folders,output_img_folder,output_label_folder);
+
+}
+
 int main(int argc,char** argv){
 
     string path;
     if(argc==1){
-        path.assign("/home/gumh/TrainData/pict_with_traffic_light/all/");
+        path.assign("/home/gumh/Videos/for_combine/");
     }else{
         path.assign(argv[1]);
     }
 
-//    decode_video_to_pict("/home/gumh/Videos/bbox样本/machangroad.mp4",2);
-//    decode_video_to_pict("/home/gumh/TrainData/AirPlane.2017.3.30/left2017033d16150767_left.avi","left2017033d16150767_left");
+//    convert_to_detectnet_format("/home/gumh/TrainData/person_car/JPEGImages",
+//                                "/home/gumh/TrainData/person_car/labels",
+//                                "/home/gumh/TrainData/person_car/detectnet_train_imgs",
+//                                "/home/gumh/TrainData/person_car/detectnet_train_labels");
 
-//    trim_pre_space_of_img_name(path);
+    //    decode_video_to_pict("/home/gumh/Videos/bbox样本/machangroad.mp4",2);
+    //    decode_video_to_pict("/home/gumh/TrainData/AirPlane.2017.3.30/left2017033d16150767_left.avi","left2017033d16150767_left");
 
-//    make_bbox(path,"images",false);
+    //    trim_pre_space_of_img_name(path);
 
-    statistic_sample_distribute(path);
+//        make_bbox(path,"3429799873058_src_window_rect","3429799873058_src_window_rect_labels");
+
+//        statistic_sample_distribute(path,"output_imgs","output_labels");
 
     //generate_train_txt
-    generate_train_txt(path);
+        generate_train_txt(path);
 
-//    resize_img(path,4);
+    //    resize_img(path,4);
 
-//    string src_video="/home/gumh/Videos/bbox样本/huachengdadao.mp4";
-//    float scale=4;
-//    resize_video(src_video,scale);
+    //    string src_video="/home/gumh/Videos/bbox样本/huachengdadao.mp4";
+    //    float scale=4;
+    //    resize_video(src_video,scale);
 
-//    decode_video_to_pict("/home/gumh/Videos/bbox样本/huangpuroad1.mp4","fortest");
+    //    decode_video_to_pict("/home/gumh/Videos/bbox样本/huangpuroad1.mp4","fortest");
 
-//    translate_car_truck_bus_to_car("/home/gumh/Videos/bbox样本/labels","/home/gumh/Videos/bbox样本/2class_labels");
+    //    translate_car_truck_bus_to_car("/home/gumh/Videos/bbox样本/labels","/home/gumh/Videos/bbox样本/2class_labels");
+
+
+//    create_traffic_light_window("/home/gumh/Videos/sunny-outside/pict_with_traffic_light",
+//                                "3429799873058_src");
+
+
+//       test_combine_labels();
 }
