@@ -6,7 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <stdio.h>
-
+#include <algorithm>
 using namespace std;
 using namespace cv;
 
@@ -542,9 +542,12 @@ void trim_pre_space_of_img_name(string path){
  * @brief generate_train_txt
  * 通过存在的label文件，决定train的列表
  * @param path
+ * 保存train.txt valid.txt文件的路径
+ * @param valid_ratio
+ * 生成的valid的比例
  */
-void generate_train_txt(string path){
-    char name[256];
+void generate_train_txt(string path,float valid_ratio=0.25){
+    char name[256],valid_name[256];
     sprintf(name,"%s/labels/",path.c_str());
 
     char img_name[256];
@@ -559,6 +562,29 @@ void generate_train_txt(string path){
     //train file
     sprintf(name,"%s/train.txt",path.c_str());
     ofstream train_file(name);
+
+    //valid file
+    sprintf(valid_name,"%s/valid.txt",path.c_str());
+    ofstream valid_file(valid_name);
+    int valid_cnt=all_labels.size()*valid_ratio;
+    cout<<"all_labels.size()="<<all_labels.size()<<",valid_cnt="<<valid_cnt<<endl;
+
+    //随机抽取
+    RNG rng(getTickCount());
+    vector<int> valid_idxs;
+    int valid_idx;
+    for(int k=0;k<valid_cnt;k++){
+        valid_idx=rng.uniform(0,all_labels.size());
+        vector<int>::iterator it=std::find(valid_idxs.begin(),valid_idxs.end(),valid_idx);
+        while(it!=valid_idxs.end()){
+            valid_idx=rng.uniform(0,all_labels.size());
+            it=std::find(valid_idxs.begin(),valid_idxs.end(),valid_idx);
+        }
+        valid_idxs.push_back(valid_idx);
+    }
+    std::stable_sort(valid_idxs.begin(),valid_idxs.end(),less<int>());
+    valid_idx=0;
+
     for(int i=0;i<all_labels.size();i++){
         fileNameOnly=all_labels[i];
         getFileNameAndSuffix(fileNameOnly,onlyName,suffix);
@@ -571,10 +597,16 @@ void generate_train_txt(string path){
         }else{
             tmpread.close();
         }
-        train_file<<img_name<<endl;
+        if(i==valid_idxs[valid_idx]){
+            valid_file<<img_name<<endl;
+            ++valid_idx;
+        }else{
+            train_file<<img_name<<endl;
+        }
 
     }
     train_file.close();
+    valid_file.close();
 }
 
 void print_boxs(vector<BBox> boxs){
